@@ -1,4 +1,6 @@
 import Layout from "./Layout.jsx";
+import Login from "./Login.jsx";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Home from "./Home";
 
@@ -18,7 +20,7 @@ import ReviewQuestion from "./ReviewQuestion";
 
 import TutorGramatique from "./TutorGramatique";
 
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
     
@@ -60,33 +62,35 @@ function PagesContent() {
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
     
-    return (
-        <Layout currentPageName={currentPage}>
-            <Routes>            
-                
-                    <Route path="/" element={<Home />} />
-                
-                
-                <Route path="/Home" element={<Home />} />
-                
-                <Route path="/Questions" element={<Questions />} />
-                
-                <Route path="/Notebooks" element={<Notebooks />} />
-                
-                <Route path="/Ranking" element={<Ranking />} />
-                
-                <Route path="/CreateQuestion" element={<CreateQuestion />} />
-                
-                <Route path="/Admin" element={<Admin />} />
-                
-                <Route path="/Stats" element={<Stats />} />
-                
-                <Route path="/ReviewQuestion" element={<ReviewQuestion />} />
-                
-                <Route path="/TutorGramatique" element={<TutorGramatique />} />
-                
+    // Public routes (no authentication required)
+    if (location.pathname === '/login') {
+        return (
+            <Routes>
+                <Route path="/login" element={<Login />} />
             </Routes>
-        </Layout>
+        );
+    }
+    
+    return (
+        <ProtectedRoute>
+            <Layout currentPageName={currentPage}>
+                <Routes>            
+                    <Route path="/" element={<Home />} />
+                    <Route path="/Home" element={<Home />} />
+                    <Route path="/Questions" element={<Questions />} />
+                    <Route path="/Notebooks" element={<Notebooks />} />
+                    <Route path="/Ranking" element={<Ranking />} />
+                    <Route path="/CreateQuestion" element={<CreateQuestion />} />
+                    <Route path="/Admin" element={<Admin />} />
+                    <Route path="/Stats" element={<Stats />} />
+                    <Route path="/ReviewQuestion" element={<ReviewQuestion />} />
+                    <Route path="/TutorGramatique" element={<TutorGramatique />} />
+                    
+                    {/* Redirect any unknown route to home */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </Layout>
+        </ProtectedRoute>
     );
 }
 

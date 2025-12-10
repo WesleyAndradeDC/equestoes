@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
-import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Home, BookOpen, FolderOpen, BarChart3, Trophy, LogOut, Menu, X, Moon, Sun, Bot } from 'lucide-react';
-import TutorChatPopup from './components/tutor/TutorChatPopup';
+import TutorChatPopup from '../components/tutor/TutorChatPopup';
 import { Button } from '@/components/ui/button';
 
 export default function Layout({ children, currentPageName }) {
-  const [user, setUser] = useState(null);
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -16,10 +16,6 @@ export default function Layout({ children, currentPageName }) {
     }
     return false;
   });
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => setUser(null));
-  }, []);
 
   useEffect(() => {
     if (darkMode) {
@@ -31,7 +27,7 @@ export default function Layout({ children, currentPageName }) {
   }, [darkMode]);
 
   const handleLogout = () => {
-    base44.auth.logout();
+    logout();
   };
 
   const toggleDarkMode = () => {
