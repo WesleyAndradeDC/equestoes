@@ -379,3 +379,4 @@ Se algo não funcionar:
 4. Verifique `.env` está correto
 5. Limpe cache e localStorage
 
+

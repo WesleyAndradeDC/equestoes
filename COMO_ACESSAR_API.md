@@ -267,3 +267,4 @@ Agora que a API está funcionando:
 - **Deploy:** `backend/RENDER_DEPLOYMENT.md`
 - **Banco de dados:** `backend/DBEAVER_SETUP.md`
 
+

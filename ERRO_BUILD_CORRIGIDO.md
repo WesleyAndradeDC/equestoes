@@ -216,3 +216,4 @@ Todos agora devem funcionar corretamente! ✅
 
 Quando o status mudar para "Live" 🟢, seu frontend estará funcionando!
 
+

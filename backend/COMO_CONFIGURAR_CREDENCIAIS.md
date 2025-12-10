@@ -236,3 +236,4 @@ Se tiver problemas:
 - Verifique `backend/DBEAVER_SETUP.md` para conectar via DBeaver
 - Confirme que o banco está ativo no Render
 
+

@@ -368,3 +368,4 @@ npm run build  # Gera dist/
 
 **Qualquer dúvida, consulte os guias detalhados!** 📚
 
+

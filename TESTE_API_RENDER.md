@@ -134,3 +134,4 @@ Se você vê as informações da API ao acessar a URL raiz, está tudo OK!
 - `backend/API_DOCUMENTATION.md` - Referência de endpoints
 - `DEPLOY_RENDER_AGORA.md` - Guia de deploy
 
+
