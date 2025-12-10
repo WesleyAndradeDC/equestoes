@@ -1,0 +1,125 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password_hash     String
+  full_name         String
+  role              String    @default("user") // "user" or "admin"
+  subscription_type String?   // "Professor", "Aluno Clube dos Cascas", "Aluno Clube do Pedrão"
+  study_streak      Int       @default(0)
+  last_study_date   String?   // ISO date string
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  // Relations
+  questions         Question[]
+  attempts          Attempt[]
+  notebooks         Notebook[]
+  comments          Comment[]
+
+  @@map("users")
+}
+
+model Question {
+  id            String    @id @default(uuid())
+  code          String?   @unique
+  text          String
+  discipline    String
+  difficulty    String    // "Fácil", "Médio", "Difícil"
+  exam_board    String?
+  year          Int?
+  position      String?
+  option_a      String
+  option_b      String
+  option_c      String
+  option_d      String
+  option_e      String
+  correct_answer String   // "A", "B", "C", "D", "E"
+  explanation   String
+  question_type String?
+  subjects      String[]  // Array of subjects
+  created_by    String?
+  created_date  DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relations
+  creator       User?     @relation(fields: [created_by], references: [email], onDelete: SetNull)
+  attempts      Attempt[]
+  notebooks     NotebookQuestion[]
+  comments      Comment[]
+
+  @@map("questions")
+}
+
+model Attempt {
+  id            String    @id @default(uuid())
+  question_id   String
+  user_id       String
+  chosen_answer String
+  is_correct    Boolean
+  answered_at   DateTime
+  created_date  DateTime  @default(now())
+  created_by    String?   // email for backward compatibility
+
+  // Relations
+  question      Question  @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("attempts")
+}
+
+model Notebook {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  color       String    @default("blue")
+  created_by  String
+  created_date DateTime @default(now())
+  updated_at  DateTime  @updatedAt
+
+  // Relations
+  creator     User      @relation(fields: [created_by], references: [email], onDelete: Cascade)
+  questions   NotebookQuestion[]
+
+  @@map("notebooks")
+}
+
+model NotebookQuestion {
+  notebook_id String
+  question_id String
+  added_at    DateTime @default(now())
+
+  // Relations
+  notebook    Notebook @relation(fields: [notebook_id], references: [id], onDelete: Cascade)
+  question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@id([notebook_id, question_id])
+  @@map("notebook_questions")
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  question_id String
+  user_id     String?
+  text        String
+  author_name String
+  author_role String
+  created_date DateTime @default(now())
+
+  // Relations
+  question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@map("comments")
+}
+

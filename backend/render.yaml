@@ -1,0 +1,36 @@
+# render.yaml - Configuração para deploy no Render
+
+services:
+  # Backend API
+  - type: web
+    name: gconcursos-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gconcursos-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false  # Você precisará adicionar manualmente no Render Dashboard
+      - key: FRONTEND_URL
+        value: https://seu-frontend.onrender.com  # Atualize após criar o frontend
+
+databases:
+  # PostgreSQL Database
+  - name: gconcursos-db
+    databaseName: gconcursos
+    region: oregon
+    plan: free
+    ipAllowList: []
+

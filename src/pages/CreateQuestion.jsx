@@ -1,0 +1,263 @@
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Save, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+
+const DISCIPLINES = [
+'Língua Portuguesa',
+'Matemática e Raciocínio Lógico',
+'Informática',
+'Direito Constitucional',
+'Direito Administrativo',
+'Atualidades',
+'Ética no Serviço Público',
+'Direito Penal',
+'Direito Processual Penal',
+'Direitos Humanos',
+'Administração Pública',
+'Administração Financeira e Orçamentária',
+'Contabilidade',
+'Arquivologia',
+'Matemática Financeira',
+'Conhecimentos Bancários',
+'Legislação Especial'];
+
+
+export default function CreateQuestion() {
+  const [user, setUser] = useState(null);
+  const [formData, setFormData] = useState({
+    text: '',
+    discipline: '',
+    difficulty: 'Médio',
+    exam_board: '',
+    year: '',
+    position: '',
+    option_a: '',
+    option_b: '',
+    option_c: '',
+    option_d: '',
+    option_e: '',
+    correct_answer: 'A',
+    explanation: ''
+  });
+
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    base44.auth.me().then((user) => {
+      const isProfessor = user.subscription_type === 'Professor' || user.role === 'admin';
+      if (!isProfessor) {
+        window.location.href = '/';
+      }
+      setUser(user);
+    }).catch(() => {
+      window.location.href = '/';
+    });
+  }, []);
+
+  const createQuestionMutation = useMutation({
+    mutationFn: (data) => base44.entities.Question.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      toast.success('Questão criada com sucesso!');
+      setFormData({
+        text: '',
+        discipline: '',
+        difficulty: 'Médio',
+        exam_board: '',
+        year: '',
+        position: '',
+        option_a: '',
+        option_b: '',
+        option_c: '',
+        option_d: '',
+        option_e: '',
+        correct_answer: 'A',
+        explanation: ''
+      });
+    },
+    onError: (error) => {
+      toast.error('Erro ao criar questão');
+    }
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!formData.text || !formData.discipline || !formData.option_a || !formData.option_b ||
+    !formData.option_c || !formData.option_d || !formData.option_e || !formData.explanation) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    createQuestionMutation.mutate({
+      ...formData,
+      year: formData.year ? Number(formData.year) : undefined
+    });
+  };
+
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  if (!user) return null;
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 dark:from-white dark:to-white bg-clip-text text-transparent">
+          Criar Nova Questão
+        </h1>
+        <p className="text-slate-600 dark:text-slate-400">
+          Adicione questões para os alunos praticarem
+        </p>
+      </div>
+
+      <Card className="bg-white/90 text-card-foreground rounded-none border dark:bg-purple-900/90 backdrop-blur-sm shadow-lg border-slate-200 dark:border-purple-700">
+        <CardHeader className="bg-slate-50 p-6 flex flex-col space-y-1.5">
+          <CardTitle className="flex items-center gap-2 dark:text-white">
+            <Plus className="w-5 h-5 text-purple-600 dark:text-white" />
+            Informações da Questão
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="bg-slate-50 p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Question Text */}
+            <div className="space-y-2">
+              <Label>Texto da Questão *</Label>
+              <Textarea
+                value={formData.text}
+                onChange={(e) => handleChange('text', e.target.value)}
+                placeholder="Digite o enunciado completo da questão..."
+                rows={6}
+                className="resize-none" />
+
+            </div>
+
+            {/* Discipline and Difficulty */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Disciplina *</Label>
+                <Select value={formData.discipline} onValueChange={(value) => handleChange('discipline', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a disciplina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DISCIPLINES.map((disc) =>
+                    <SelectItem key={disc} value={disc}>{disc}</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Dificuldade *</Label>
+                <Select value={formData.difficulty} onValueChange={(value) => handleChange('difficulty', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Fácil">Fácil</SelectItem>
+                    <SelectItem value="Médio">Médio</SelectItem>
+                    <SelectItem value="Difícil">Difícil</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Exam Info */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Banca</Label>
+                <Input
+                  value={formData.exam_board}
+                  onChange={(e) => handleChange('exam_board', e.target.value)}
+                  placeholder="Ex: CESPE, FCC, FGV" />
+
+              </div>
+
+              <div className="space-y-2">
+                <Label>Ano</Label>
+                <Input
+                  type="number"
+                  value={formData.year}
+                  onChange={(e) => handleChange('year', e.target.value)}
+                  placeholder="2024" />
+
+              </div>
+
+              <div className="space-y-2">
+                <Label>Cargo</Label>
+                <Input
+                  value={formData.position}
+                  onChange={(e) => handleChange('position', e.target.value)}
+                  placeholder="Ex: Analista" />
+
+              </div>
+            </div>
+
+            {/* Options */}
+            <div className="space-y-4">
+              <Label>Alternativas *</Label>
+              {['a', 'b', 'c', 'd', 'e'].map((letter) =>
+              <div key={letter} className="flex gap-2 items-center">
+                  <span className="font-bold text-purple-700 dark:text-white w-8">{letter.toUpperCase()})</span>
+                  <Input
+                  value={formData[`option_${letter}`]}
+                  onChange={(e) => handleChange(`option_${letter}`, e.target.value)}
+                  placeholder={`Digite a alternativa ${letter.toUpperCase()}`} />
+
+                </div>
+              )}
+            </div>
+
+            {/* Correct Answer */}
+            <div className="space-y-2">
+              <Label>Gabarito *</Label>
+              <Select value={formData.correct_answer} onValueChange={(value) => handleChange('correct_answer', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A">A</SelectItem>
+                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="D">D</SelectItem>
+                  <SelectItem value="E">E</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Explanation */}
+            <div className="space-y-2">
+              <Label>Explicação *</Label>
+              <Textarea
+                value={formData.explanation}
+                onChange={(e) => handleChange('explanation', e.target.value)}
+                placeholder="Explique por que a alternativa está correta..."
+                rows={4}
+                className="resize-none" />
+
+            </div>
+
+            <Button
+              type="submit" className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 w-full hover:bg-purple-700"
+
+              disabled={createQuestionMutation.isPending}>
+
+              <Save className="w-5 h-5 mr-2" />
+              {createQuestionMutation.isPending ? 'Salvando...' : 'Criar Questão'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>);
+
+}
