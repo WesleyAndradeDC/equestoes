@@ -39,10 +39,22 @@ export default function Questions() {
   // Check user subscription type
   const isRestrictedUser = user?.subscription_type === 'Aluno Clube do Pedrão';
 
-  const { data: questions = [], isLoading: questionsLoading } = useQuery({
+  const { data: questions = [], isLoading: questionsLoading, error: questionsError } = useQuery({
     queryKey: ['questions'],
-    queryFn: () => base44.entities.Question.list(),
-    initialData: [],
+    queryFn: async () => {
+      console.log('🔍 Buscando questões...');
+      try {
+        const result = await base44.entities.Question.list();
+        console.log('✅ Questões recebidas:', result?.length);
+        console.log('📊 Primeira questão:', result?.[0]);
+        return result || [];
+      } catch (error) {
+        console.error('❌ Erro ao buscar questões:', error);
+        throw error;
+      }
+    },
+    retry: 1,
+    staleTime: 0, // Sempre buscar dados frescos
   });
 
   const { data: attempts = [] } = useQuery({
@@ -245,10 +257,50 @@ export default function Questions() {
     return notebooks.some(n => n.question_ids?.includes(questionId));
   };
 
+  // Debug: mostrar erros no console
+  React.useEffect(() => {
+    if (questionsError) {
+      console.error('🔴 Erro nas questões:', questionsError);
+      toast.error(`Erro ao carregar questões: ${questionsError.message}`);
+    }
+  }, [questionsError]);
+
+  React.useEffect(() => {
+    console.log('📊 Estado atual das questões:', {
+      total: questions?.length,
+      loading: questionsLoading,
+      hasError: !!questionsError,
+      firstQuestion: questions?.[0]?.id
+    });
+  }, [questions, questionsLoading, questionsError]);
+
   if (questionsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+        <p className="ml-3 text-slate-600">Carregando questões...</p>
+      </div>
+    );
+  }
+
+  if (questionsError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <AlertCircle className="w-16 h-16 text-red-500" />
+        <div className="text-center">
+          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">
+            Erro ao carregar questões
+          </h3>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">
+            {questionsError.message}
+          </p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-purple-600 hover:bg-purple-700"
+          >
+            Tentar Novamente
+          </Button>
+        </div>
       </div>
     );
   }

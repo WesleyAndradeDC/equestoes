@@ -438,3 +438,4 @@ SELECT * FROM pg_stat_user_tables WHERE relname = 'questions';
 -- 4. Pressione Ctrl+Enter ou clique em Execute
 
 
+

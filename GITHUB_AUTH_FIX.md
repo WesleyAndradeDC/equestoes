@@ -214,3 +214,4 @@ git push -u origin main
 Para repositório privado, use **SSH** ou **GitHub CLI** - são mais seguros e fáceis de configurar.
 
 
+

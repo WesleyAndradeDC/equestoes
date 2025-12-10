@@ -3,6 +3,8 @@ import { API_BASE_URL } from '@/config/api';
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
+    console.log('🔧 ApiClient inicializado com baseURL:', this.baseURL);
+    console.log('🌍 import.meta.env.VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
   }
 
   getToken() {
@@ -22,6 +24,14 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getToken();
 
+    console.log('🔗 ApiClient Request:', {
+      baseURL: this.baseURL,
+      endpoint,
+      fullURL: url,
+      hasToken: !!token,
+      method: options.method || 'GET'
+    });
+
     const config = {
       ...options,
       headers: {
@@ -36,7 +46,13 @@ class ApiClient {
     }
 
     try {
+      console.log('📤 Fazendo requisição para:', url);
       const response = await fetch(url, config);
+      console.log('📥 Resposta recebida:', {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText
+      });
 
       // Handle 401 Unauthorized (token expired)
       if (response.status === 401 && token && !options.skipRetry) {
@@ -122,5 +138,6 @@ class ApiClient {
 
 export const apiClient = new ApiClient();
 export default apiClient;
+
 
 

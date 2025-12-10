@@ -172,3 +172,4 @@ Isso vai criar as tabelas no banco e popular com dados de teste!
 - Ver `backend/DBEAVER_SETUP.md` para conectar via DBeaver
 
 
+

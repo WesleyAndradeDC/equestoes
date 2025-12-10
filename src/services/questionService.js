@@ -3,11 +3,30 @@ import { API_ENDPOINTS } from '@/config/api';
 
 class QuestionService {
   async list(orderBy, limit) {
+    console.log('📡 QuestionService.list() chamado', { orderBy, limit });
+    console.log('🔗 API_ENDPOINTS.QUESTIONS:', API_ENDPOINTS.QUESTIONS);
+    
     const params = new URLSearchParams();
     if (limit) params.append('limit', limit);
     
     const query = params.toString() ? `?${params.toString()}` : '';
-    return apiClient.get(`${API_ENDPOINTS.QUESTIONS}${query}`);
+    const url = `${API_ENDPOINTS.QUESTIONS}${query}`;
+    
+    console.log('🌐 URL completa:', url);
+    
+    try {
+      const result = await apiClient.get(url);
+      console.log('✅ Resposta recebida:', {
+        type: typeof result,
+        isArray: Array.isArray(result),
+        length: result?.length,
+        first: result?.[0]
+      });
+      return result;
+    } catch (error) {
+      console.error('❌ Erro no QuestionService:', error);
+      throw error;
+    }
   }
 
   async get(id) {
@@ -41,5 +60,6 @@ class QuestionService {
 
 export const questionService = new QuestionService();
 export default questionService;
+
 
 
