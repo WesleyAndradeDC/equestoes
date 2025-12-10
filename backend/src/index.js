@@ -25,9 +25,35 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Root endpoint - API info
+app.get('/', (req, res) => {
+  res.json({
+    name: 'G-Concursos API',
+    version: '1.0.0',
+    status: 'online',
+    message: 'API REST para plataforma G-Concursos - Gramatique',
+    endpoints: {
+      health: '/health',
+      auth: '/api/auth/*',
+      questions: '/api/questions',
+      attempts: '/api/attempts',
+      notebooks: '/api/notebooks',
+      comments: '/api/comments',
+      users: '/api/users',
+      tutor: '/api/tutor'
+    },
+    documentation: 'https://github.com/WesleyAndradeDC/gconcursos'
+  });
+});
+
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'G-Concursos API is running' });
+  res.json({ 
+    status: 'ok', 
+    message: 'G-Concursos API is running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 // Routes
