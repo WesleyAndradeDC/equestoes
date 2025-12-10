@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste API - G-Concursos</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #6b46c1;
+            border-bottom: 3px solid #6b46c1;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #4a5568;
+            margin-top: 30px;
+        }
+        .test-box {
+            background: #f7fafc;
+            border-left: 4px solid #6b46c1;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        button {
+            background: #6b46c1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #553c9a;
+        }
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #edf2f7;
+            border: 1px solid #cbd5e0;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #c6f6d5;
+            border-color: #38a169;
+            color: #22543d;
+        }
+        .error {
+            background: #fed7d7;
+            border-color: #e53e3e;
+            color: #742a2a;
+        }
+        .warning {
+            background: #feebc8;
+            border-color: #ed8936;
+            color: #7c2d12;
+        }
+        .info {
+            background: #bee3f8;
+            border-color: #3182ce;
+            color: #2c5282;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-online {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        .status-offline {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #cbd5e0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px dashed #cbd5e0;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Teste Completo - API G-Concursos</h1>
+        
+        <div class="test-box info">
+            <strong>📋 Instruções:</strong><br>
+            1. Primeiro teste o Health Check<br>
+            2. Faça login com suas credenciais<br>
+            3. Teste a listagem de questões<br>
+            4. Verifique os resultados abaixo
+        </div>
+
+        <!-- Teste 1: Health Check -->
+        <div class="test-section">
+            <h2>1️⃣ Health Check do Backend</h2>
+            <p>Verifica se a API está online</p>
+            <button onclick="testHealthCheck()">🏥 Testar Health Check</button>
+            <div id="health-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Teste 2: Login -->
+        <div class="test-section">
+            <h2>2️⃣ Login (Obter Token)</h2>
+            <p>Faça login para obter um token de autenticação</p>
+            <div>
+                <label>Email:</label>
+                <input type="text" id="email" value="admin@gconcursos.com" placeholder="seu-email@exemplo.com">
+                
+                <label>Senha:</label>
+                <input type="password" id="password" value="Admin@123" placeholder="sua-senha">
+                
+                <button onclick="testLogin()">🔐 Fazer Login</button>
+            </div>
+            <div id="login-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Teste 3: Listar Questões -->
+        <div class="test-section">
+            <h2>3️⃣ Listar Questões</h2>
+            <p>Busca todas as questões do banco (requer autenticação)</p>
+            <button onclick="testListQuestions()" id="btn-list-questions" disabled>📚 Listar Questões</button>
+            <div id="questions-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Teste 4: Buscar Questão Específica -->
+        <div class="test-section">
+            <h2>4️⃣ Buscar Questão Específica</h2>
+            <p>Busca uma questão pelo ID</p>
+            <input type="text" id="question-id" placeholder="Cole o ID de uma questão aqui">
+            <button onclick="testGetQuestion()" id="btn-get-question" disabled>🔍 Buscar Questão</button>
+            <div id="question-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Teste 5: Filtros -->
+        <div class="test-section">
+            <h2>5️⃣ Filtros</h2>
+            <p>Testa filtros de dificuldade e disciplina</p>
+            <button onclick="testFilters()" id="btn-filters" disabled>🔎 Testar Filtros</button>
+            <div id="filters-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Informações -->
+        <div class="test-box warning" style="margin-top: 30px;">
+            <strong>⚠️ Importante:</strong><br>
+            • Este arquivo testa a API diretamente, sem passar pelo frontend React<br>
+            • Abra o Console do navegador (F12) para ver logs detalhados<br>
+            • Se algum teste falhar, copie o erro e envie para análise
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://gconcursos-api.onrender.com/api';
+        let accessToken = null;
+
+        // Função auxiliar para exibir resultado
+        function showResult(elementId, content, className = '') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = content;
+            element.style.display = 'block';
+            element.className = `result ${className}`;
+        }
+
+        // Teste 1: Health Check
+        async function testHealthCheck() {
+            console.log('🏥 Testando Health Check...');
+            try {
+                const response = await fetch('https://gconcursos-api.onrender.com/health');
+                const data = await response.json();
+                
+                console.log('Health Check Response:', data);
+                
+                if (response.ok) {
+                    showResult('health-result', `
+                        <strong>✅ API está ONLINE!</strong><br><br>
+                        <strong>Status:</strong> ${data.status}<br>
+                        <strong>Mensagem:</strong> ${data.message}<br>
+                        <strong>Timestamp:</strong> ${data.timestamp}<br>
+                        <strong>Uptime:</strong> ${data.uptime?.toFixed(2)}s
+                    `, 'success');
+                } else {
+                    showResult('health-result', `
+                        <strong>❌ Erro no Health Check</strong><br><br>
+                        <strong>Status:</strong> ${response.status}<br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'error');
+                }
+            } catch (error) {
+                console.error('Health Check Error:', error);
+                showResult('health-result', `
+                    <strong>❌ Erro ao conectar com a API</strong><br><br>
+                    <strong>Erro:</strong> ${error.message}<br><br>
+                    <strong>Possíveis causas:</strong><br>
+                    • API está offline<br>
+                    • Problema de rede<br>
+                    • URL incorreta
+                `, 'error');
+            }
+        }
+
+        // Teste 2: Login
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            console.log('🔐 Tentando fazer login...');
+            console.log('Email:', email);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                console.log('Login Response:', data);
+
+                if (response.ok && data.accessToken) {
+                    accessToken = data.accessToken;
+                    localStorage.setItem('accessToken', accessToken);
+                    
+                    // Habilitar botões que precisam de autenticação
+                    document.getElementById('btn-list-questions').disabled = false;
+                    document.getElementById('btn-get-question').disabled = false;
+                    document.getElementById('btn-filters').disabled = false;
+
+                    showResult('login-result', `
+                        <strong>✅ Login realizado com sucesso!</strong><br><br>
+                        <strong>Usuário:</strong> ${data.user.full_name}<br>
+                        <strong>Email:</strong> ${data.user.email}<br>
+                        <strong>Role:</strong> ${data.user.role}<br>
+                        <strong>Assinatura:</strong> ${data.user.subscription_type || 'Nenhuma'}<br><br>
+                        <strong>Token obtido!</strong> Os testes abaixo foram habilitados.
+                    `, 'success');
+                } else {
+                    showResult('login-result', `
+                        <strong>❌ Erro no login</strong><br><br>
+                        <strong>Status:</strong> ${response.status}<br>
+                        <strong>Erro:</strong> ${data.error || 'Erro desconhecido'}<br><br>
+                        <strong>Verifique:</strong><br>
+                        • Email e senha estão corretos?<br>
+                        • Usuário existe no banco de dados?
+                    `, 'error');
+                }
+            } catch (error) {
+                console.error('Login Error:', error);
+                showResult('login-result', `
+                    <strong>❌ Erro ao fazer login</strong><br><br>
+                    <strong>Erro:</strong> ${error.message}
+                `, 'error');
+            }
+        }
+
+        // Teste 3: Listar Questões
+        async function testListQuestions() {
+            console.log('📚 Buscando questões...');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/questions`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                const data = await response.json();
+                console.log('Questions Response:', data);
+
+                if (response.ok && Array.isArray(data)) {
+                    const totalQuestions = data.length;
+                    const disciplines = [...new Set(data.map(q => q.discipline))];
+                    const difficulties = [...new Set(data.map(q => q.difficulty))];
+
+                    // Primeira questão como exemplo
+                    const firstQuestion = data[0];
+
+                    // Salvar ID da primeira questão para teste 4
+                    if (firstQuestion) {
+                        document.getElementById('question-id').value = firstQuestion.id;
+                    }
+
+                    showResult('questions-result', `
+                        <strong>✅ Questões carregadas com sucesso!</strong><br><br>
+                        <strong>📊 Estatísticas:</strong><br>
+                        • Total de questões: ${totalQuestions}<br>
+                        • Disciplinas: ${disciplines.join(', ')}<br>
+                        • Dificuldades: ${difficulties.join(', ')}<br><br>
+                        <strong>📝 Exemplo (primeira questão):</strong><br>
+                        • ID: ${firstQuestion?.id}<br>
+                        • Código: ${firstQuestion?.code || 'N/A'}<br>
+                        • Disciplina: ${firstQuestion?.discipline}<br>
+                        • Dificuldade: ${firstQuestion?.difficulty}<br>
+                        • Texto: ${firstQuestion?.text?.substring(0, 100)}...
+                    `, 'success');
+                } else {
+                    showResult('questions-result', `
+                        <strong>⚠️ Resposta inesperada</strong><br><br>
+                        <strong>Status:</strong> ${response.status}<br>
+                        <strong>Tipo de resposta:</strong> ${typeof data}<br>
+                        <strong>É array?:</strong> ${Array.isArray(data) ? 'Sim' : 'Não'}<br>
+                        <strong>Total de itens:</strong> ${data.length || 'N/A'}<br><br>
+                        <strong>Resposta:</strong><br>
+                        <pre>${JSON.stringify(data, null, 2).substring(0, 500)}</pre>
+                    `, 'warning');
+                }
+            } catch (error) {
+                console.error('List Questions Error:', error);
+                showResult('questions-result', `
+                    <strong>❌ Erro ao buscar questões</strong><br><br>
+                    <strong>Erro:</strong> ${error.message}<br><br>
+                    <strong>Possíveis causas:</strong><br>
+                    • Token expirado<br>
+                    • Problema na API<br>
+                    • Banco de dados sem questões
+                `, 'error');
+            }
+        }
+
+        // Teste 4: Buscar Questão Específica
+        async function testGetQuestion() {
+            const questionId = document.getElementById('question-id').value;
+            
+            if (!questionId) {
+                showResult('question-result', `
+                    <strong>⚠️ Digite um ID de questão</strong><br><br>
+                    Execute o teste "Listar Questões" primeiro para obter um ID automaticamente.
+                `, 'warning');
+                return;
+            }
+
+            console.log('🔍 Buscando questão:', questionId);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/questions/${questionId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                const data = await response.json();
+                console.log('Question Response:', data);
+
+                if (response.ok) {
+                    showResult('question-result', `
+                        <strong>✅ Questão encontrada!</strong><br><br>
+                        <strong>ID:</strong> ${data.id}<br>
+                        <strong>Código:</strong> ${data.code || 'N/A'}<br>
+                        <strong>Disciplina:</strong> ${data.discipline}<br>
+                        <strong>Dificuldade:</strong> ${data.difficulty}<br>
+                        <strong>Banca:</strong> ${data.exam_board || 'N/A'}<br>
+                        <strong>Ano:</strong> ${data.year || 'N/A'}<br><br>
+                        <strong>Enunciado:</strong><br>
+                        ${data.text}<br><br>
+                        <strong>Alternativas:</strong><br>
+                        A) ${data.option_a}<br>
+                        B) ${data.option_b}<br>
+                        C) ${data.option_c}<br>
+                        D) ${data.option_d}<br>
+                        E) ${data.option_e}<br><br>
+                        <strong>Resposta Correta:</strong> ${data.correct_answer}<br><br>
+                        <strong>Explicação:</strong><br>
+                        ${data.explanation}
+                    `, 'success');
+                } else {
+                    showResult('question-result', `
+                        <strong>❌ Questão não encontrada</strong><br><br>
+                        <strong>Status:</strong> ${response.status}<br>
+                        <strong>Erro:</strong> ${data.error || 'Erro desconhecido'}
+                    `, 'error');
+                }
+            } catch (error) {
+                console.error('Get Question Error:', error);
+                showResult('question-result', `
+                    <strong>❌ Erro ao buscar questão</strong><br><br>
+                    <strong>Erro:</strong> ${error.message}
+                `, 'error');
+            }
+        }
+
+        // Teste 5: Filtros
+        async function testFilters() {
+            console.log('🔎 Testando filtros...');
+
+            try {
+                // Teste 1: Filtro por dificuldade
+                const resEasy = await fetch(`${API_BASE_URL}/questions?difficulty=Fácil`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const dataEasy = await resEasy.json();
+
+                // Teste 2: Filtro por dificuldade Médio
+                const resMedium = await fetch(`${API_BASE_URL}/questions?difficulty=Médio`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const dataMedium = await resMedium.json();
+
+                // Teste 3: Filtro por dificuldade Difícil
+                const resHard = await fetch(`${API_BASE_URL}/questions?difficulty=Difícil`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const dataHard = await resHard.json();
+
+                showResult('filters-result', `
+                    <strong>✅ Filtros funcionando!</strong><br><br>
+                    <strong>📊 Resultados por Dificuldade:</strong><br>
+                    • Fácil: ${dataEasy.length} questões<br>
+                    • Médio: ${dataMedium.length} questões<br>
+                    • Difícil: ${dataHard.length} questões<br><br>
+                    <strong>Total:</strong> ${dataEasy.length + dataMedium.length + dataHard.length} questões
+                `, 'success');
+            } catch (error) {
+                console.error('Filters Error:', error);
+                showResult('filters-result', `
+                    <strong>❌ Erro ao testar filtros</strong><br><br>
+                    <strong>Erro:</strong> ${error.message}
+                `, 'error');
+            }
+        }
+
+        // Auto-carregar token se existir
+        window.onload = () => {
+            const savedToken = localStorage.getItem('accessToken');
+            if (savedToken) {
+                accessToken = savedToken;
+                document.getElementById('btn-list-questions').disabled = false;
+                document.getElementById('btn-get-question').disabled = false;
+                document.getElementById('btn-filters').disabled = false;
+                console.log('✅ Token carregado do localStorage');
+            }
+        };
+    </script>
+</body>
+</html>
+
