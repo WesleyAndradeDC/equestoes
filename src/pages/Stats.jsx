@@ -77,16 +77,26 @@ export default function Stats() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: attempts = [] } = useQuery({
+  const { data: attempts = [], isLoading: attemptsLoading } = useQuery({
     queryKey: ['attempts'],
-    queryFn: () => base44.entities.Attempt.list('-created_date', 10000),
-    initialData: []
+    queryFn: async () => {
+      console.log('📊 Stats: Buscando tentativas...');
+      const result = await base44.entities.Attempt.list('-created_date', 10000);
+      console.log('✅ Stats: Tentativas recebidas:', result?.length);
+      return result || [];
+    },
+    staleTime: 0,
   });
 
-  const { data: questions = [] } = useQuery({
+  const { data: questions = [], isLoading: questionsLoading } = useQuery({
     queryKey: ['questions'],
-    queryFn: () => base44.entities.Question.list(),
-    initialData: []
+    queryFn: async () => {
+      console.log('📊 Stats: Buscando questões...');
+      const result = await base44.entities.Question.list();
+      console.log('✅ Stats: Questões recebidas:', result?.length);
+      return result || [];
+    },
+    staleTime: 0,
   });
 
   // Filter attempts by date range

@@ -45,22 +45,37 @@ export default function Ranking() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  const { data: attempts = [] } = useQuery({
+  const { data: attempts = [], isLoading: attemptsLoading } = useQuery({
     queryKey: ['all-attempts'],
-    queryFn: () => base44.entities.Attempt.list('-created_date', 10000),
-    initialData: [],
+    queryFn: async () => {
+      console.log('🏆 Ranking: Buscando tentativas...');
+      const result = await base44.entities.Attempt.list('-created_date', 10000);
+      console.log('✅ Ranking: Tentativas recebidas:', result?.length);
+      return result || [];
+    },
+    staleTime: 0,
   });
 
-  const { data: questions = [] } = useQuery({
+  const { data: questions = [], isLoading: questionsLoading } = useQuery({
     queryKey: ['questions'],
-    queryFn: () => base44.entities.Question.list(),
-    initialData: [],
+    queryFn: async () => {
+      console.log('🏆 Ranking: Buscando questões...');
+      const result = await base44.entities.Question.list();
+      console.log('✅ Ranking: Questões recebidas:', result?.length);
+      return result || [];
+    },
+    staleTime: 0,
   });
 
-  const { data: users = [] } = useQuery({
+  const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: [],
+    queryFn: async () => {
+      console.log('🏆 Ranking: Buscando usuários...');
+      const result = await base44.entities.User.list();
+      console.log('✅ Ranking: Usuários recebidos:', result?.length);
+      return result || [];
+    },
+    staleTime: 0,
   });
 
   // Get all unique subjects
