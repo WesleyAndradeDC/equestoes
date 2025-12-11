@@ -1,5 +1,6 @@
 import Layout from "./Layout.jsx";
 import Login from "./Login.jsx";
+import NotFound from "./NotFound.jsx";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Home from "./Home";
@@ -62,35 +63,96 @@ function PagesContent() {
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
     
-    // Public routes (no authentication required)
-    if (location.pathname === '/login') {
-        return (
-            <Routes>
-                <Route path="/login" element={<Login />} />
-            </Routes>
-        );
-    }
-    
     return (
-        <ProtectedRoute>
-            <Layout currentPageName={currentPage}>
-                <Routes>            
-                    <Route path="/" element={<Home />} />
-                    <Route path="/Home" element={<Home />} />
-                    <Route path="/Questions" element={<Questions />} />
-                    <Route path="/Notebooks" element={<Notebooks />} />
-                    <Route path="/Ranking" element={<Ranking />} />
-                    <Route path="/CreateQuestion" element={<CreateQuestion />} />
-                    <Route path="/Admin" element={<Admin />} />
-                    <Route path="/Stats" element={<Stats />} />
-                    <Route path="/ReviewQuestion" element={<ReviewQuestion />} />
-                    <Route path="/TutorGramatique" element={<TutorGramatique />} />
-                    
-                    {/* Redirect any unknown route to home */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-            </Layout>
-        </ProtectedRoute>
+        <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/404" element={<NotFound />} />
+            
+            {/* Protected routes */}
+            <Route path="/" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <Home />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            
+            <Route path="/Home" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <Home />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            
+            <Route path="/Questions" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <Questions />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            
+            <Route path="/Notebooks" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <Notebooks />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            
+            <Route path="/Ranking" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <Ranking />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            
+            <Route path="/CreateQuestion" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <CreateQuestion />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            
+            <Route path="/Admin" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <Admin />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            
+            <Route path="/Stats" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <Stats />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            
+            <Route path="/ReviewQuestion" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <ReviewQuestion />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            
+            <Route path="/TutorGramatique" element={
+                <ProtectedRoute>
+                    <Layout currentPageName={currentPage}>
+                        <TutorGramatique />
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            
+            {/* 404 - Not Found */}
+            <Route path="*" element={<NotFound />} />
+        </Routes>
     );
 }
 
