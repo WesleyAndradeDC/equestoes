@@ -22,10 +22,22 @@ export default function Admin() {
     });
   }, []);
 
-  const { data: users = [] } = useQuery({
+  const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['all-users'],
-    queryFn: () => base44.entities.User.list(),
-    initialData: [],
+    queryFn: async () => {
+      console.log('👤 Admin: Buscando usuários...');
+      try {
+        const result = await base44.entities.User.list();
+        console.log('✅ Admin: Usuários recebidos:', result?.length);
+        console.log('📋 Lista de usuários:', result);
+        return result || [];
+      } catch (error) {
+        console.error('❌ Admin: Erro ao buscar usuários:', error);
+        throw error;
+      }
+    },
+    staleTime: 0,
+    retry: 1,
   });
 
   const deleteUserMutation = useMutation({
@@ -45,7 +57,60 @@ export default function Admin() {
     }
   };
 
-  if (!currentUser) return null;
+  // Debug logs
+  React.useEffect(() => {
+    console.log('👤 Admin: Estado atual:', {
+      currentUser: currentUser?.email,
+      usersCount: users?.length,
+      loading: usersLoading,
+      hasError: !!usersError,
+      users: users
+    });
+  }, [currentUser, users, usersLoading, usersError]);
+
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Shield className="w-16 h-16 text-purple-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-slate-600 dark:text-slate-400">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (usersLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Users className="w-16 h-16 text-purple-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-slate-600 dark:text-slate-400">Carregando usuários...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (usersError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <AlertCircle className="w-16 h-16 text-red-500" />
+        <div className="text-center">
+          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">
+            Erro ao carregar usuários
+          </h3>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">
+            {usersError.message || 'Erro desconhecido'}
+          </p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-purple-600 hover:bg-purple-700"
+          >
+            Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -119,8 +184,17 @@ export default function Admin() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {users.map((user) => {
+          {users.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-500 dark:text-slate-400">Nenhum usuário encontrado</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">
+                Verifique os logs do console para mais informações
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {users.map((user) => {
               const isCurrentUser = user.id === currentUser.id;
               
               return (
@@ -174,7 +248,8 @@ export default function Admin() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
