@@ -99,27 +99,43 @@ export default function Stats() {
     staleTime: 0,
   });
 
-  // Filter attempts by date range
+  // Filter attempts by date range AND current user
   const filteredAttempts = React.useMemo(() => {
-    if (dateRange === 'all') return attempts;
+    console.log('📊 Filtrando tentativas para usuário:', user?.email);
+    
+    // Filtrar apenas tentativas do usuário atual
+    const userAttempts = attempts.filter(attempt => 
+      attempt.created_by === user?.email || attempt.user_id === user?.id
+    );
+    
+    console.log('📊 Total de tentativas do usuário:', userAttempts.length);
+    console.log('📊 Total de tentativas gerais:', attempts.length);
+    
+    // Aplicar filtro de data
+    if (dateRange === 'all') return userAttempts;
     const daysAgo = parseInt(dateRange);
     const startDate = subDays(new Date(), daysAgo);
-    return attempts.filter((attempt) => new Date(attempt.created_date) >= startDate);
-  }, [attempts, dateRange]);
+    return userAttempts.filter((attempt) => new Date(attempt.created_date) >= startDate);
+  }, [attempts, dateRange, user]);
 
-  // Period comparison data
+  // Period comparison data - apenas do usuário atual
   const periodComparison = React.useMemo(() => {
     const period1Start = startOfMonth(new Date(currentYear, parseInt(period1Month)));
     const period1End = endOfMonth(period1Start);
     const period2Start = startOfMonth(new Date(currentYear, parseInt(period2Month)));
     const period2End = endOfMonth(period2Start);
 
-    const period1Attempts = attempts.filter((a) => {
+    // Filtrar apenas tentativas do usuário atual
+    const userAttempts = attempts.filter(a => 
+      a.created_by === user?.email || a.user_id === user?.id
+    );
+
+    const period1Attempts = userAttempts.filter((a) => {
       const date = new Date(a.created_date);
       return date >= period1Start && date <= period1End;
     });
 
-    const period2Attempts = attempts.filter((a) => {
+    const period2Attempts = userAttempts.filter((a) => {
       const date = new Date(a.created_date);
       return date >= period2Start && date <= period2End;
     });
@@ -136,18 +152,23 @@ export default function Stats() {
       period1: { total: p1Total, correct: p1Correct, accuracy: p1Accuracy, name: MONTHS[parseInt(period1Month)].label },
       period2: { total: p2Total, correct: p2Correct, accuracy: p2Accuracy, name: MONTHS[parseInt(period2Month)].label }
     };
-  }, [attempts, period1Month, period2Month, currentYear]);
+  }, [attempts, period1Month, period2Month, currentYear, user]);
 
-  // Weekly evolution data
+  // Weekly evolution data - apenas do usuário atual
   const weeklyEvolution = React.useMemo(() => {
     const weeks = eachWeekOfInterval({
       start: subDays(new Date(), 56),
       end: new Date()
     }, { weekStartsOn: 0 });
 
+    // Filtrar apenas tentativas do usuário atual
+    const userAttempts = attempts.filter(a => 
+      a.created_by === user?.email || a.user_id === user?.id
+    );
+
     return weeks.map((weekStart) => {
       const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
-      const weekAttempts = attempts.filter((a) => {
+      const weekAttempts = userAttempts.filter((a) => {
         const date = new Date(a.created_date);
         return date >= weekStart && date <= weekEnd;
       });
@@ -163,7 +184,7 @@ export default function Stats() {
         accuracy: total > 0 ? safeNumber((correct / total * 100).toFixed(1)) : 0
       };
     });
-  }, [attempts]);
+  }, [attempts, user]);
 
   // Daily performance data
   const dailyData = React.useMemo(() => {

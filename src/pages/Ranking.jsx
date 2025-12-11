@@ -107,8 +107,17 @@ export default function Ranking() {
 
   // Calculate rankings
   const calculateRanking = () => {
+    console.log('🏆 Calculando ranking...');
+    console.log('🏆 Usuário atual:', currentUser);
+    console.log('🏆 Total de attempts:', attempts.length);
+    console.log('🏆 Total de users:', users.length);
+    
     const userScores = {};
     const dateThreshold = getDateRange();
+    
+    // Filtrar ranking por assinatura se for Clube do Pedrão
+    const isClubePedrao = currentUser?.subscription_type === 'Aluno Clube do Pedrão';
+    console.log('🏆 É Clube do Pedrão?', isClubePedrao);
 
     attempts.forEach(attempt => {
       if (!attempt.is_correct) return;
@@ -174,7 +183,7 @@ export default function Ranking() {
     });
 
     // Add user details and calculate accuracy
-    const ranking = Object.values(userScores).map(userScore => {
+    let ranking = Object.values(userScores).map(userScore => {
       const user = users.find(u => u.email === userScore.email);
       const totalAttempts = safeNumber(userScore.totalAttempts);
       const correctAnswers = safeNumber(userScore.correctAnswers);
@@ -182,9 +191,16 @@ export default function Ranking() {
         ? safeNumber(((correctAnswers / totalAttempts) * 100).toFixed(1))
         : 0;
       
+      console.log('🏆 Usuário no ranking:', {
+        email: userScore.email,
+        nome_encontrado: user?.full_name,
+        subscription: user?.subscription_type
+      });
+      
       return {
         ...userScore,
-        name: user?.full_name || 'Usuário',
+        name: user?.full_name || 'Usuário Desconhecido',
+        subscription_type: user?.subscription_type || null,
         accuracy: accuracy,
         score: safeNumber(userScore.score),
         correctAnswers: correctAnswers,
@@ -192,12 +208,24 @@ export default function Ranking() {
       };
     });
 
+    // Filtrar ranking para Clube do Pedrão (apenas membros do mesmo clube)
+    if (isClubePedrao) {
+      ranking = ranking.filter(r => {
+        const user = users.find(u => u.email === r.email);
+        return user?.subscription_type === 'Aluno Clube do Pedrão';
+      });
+      console.log('🏆 Ranking filtrado para Clube do Pedrão:', ranking.length, 'usuários');
+    }
+
     // Sort by score (descending)
     ranking.sort((a, b) => {
       const scoreA = safeNumber(a.score);
       const scoreB = safeNumber(b.score);
       return scoreB - scoreA;
     });
+
+    console.log('🏆 Ranking final:', ranking.length, 'usuários');
+    console.log('🏆 Top 3:', ranking.slice(0, 3));
 
     return ranking;
   };
@@ -227,11 +255,15 @@ export default function Ranking() {
         <div className="flex items-center justify-center gap-2">
           <Trophy className="w-10 h-10 text-purple-600 dark:text-white" />
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 dark:from-white dark:to-white bg-clip-text text-transparent">
-            Ranking Global
+            {currentUser?.subscription_type === 'Aluno Clube do Pedrão' 
+              ? 'Ranking Clube do Pedrão' 
+              : 'Ranking Global'}
           </h1>
         </div>
         <p className="text-slate-600 dark:text-slate-400">
-          Compete com outros candidatos e veja sua posição
+          {currentUser?.subscription_type === 'Aluno Clube do Pedrão'
+            ? 'Ranking exclusivo dos alunos do Clube do Pedrão'
+            : 'Compete com outros candidatos e veja sua posição'}
         </p>
       </div>
 
