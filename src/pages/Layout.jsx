@@ -69,15 +69,12 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to={createPageUrl('Home')} className="flex items-center space-x-3 group shrink-0">
+            <Link to={createPageUrl('Home')} className="flex items-center group shrink-0">
                 <img 
                   src="https://gramatiquecursos.com/wp-content/uploads/2024/02/gramatique-lilas.svg" 
                   alt="Gramatique" 
                   className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
                 />
-                <span className="text-lg font-bold bg-gradient-to-r from-[#8F39D8] to-[#5B2C8E] dark:from-white dark:to-white bg-clip-text text-transparent hidden sm:block font-montserrat">
-                  G CONCURSOS
-                </span>
               </Link>
 
             {/* Desktop Navigation */}

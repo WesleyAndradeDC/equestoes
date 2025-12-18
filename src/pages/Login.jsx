@@ -113,12 +113,14 @@ export default function Login() {
       <Card className="w-full max-w-md bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-2xl">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 dark:from-white dark:to-white rounded-2xl flex items-center justify-center shadow-lg">
-              <GraduationCap className="w-10 h-10 text-white dark:text-black" />
-            </div>
+            <img 
+              src="https://gramatiquecursos.com/wp-content/uploads/2024/02/gramatique-lilas.svg" 
+              alt="Gramatique" 
+              className="h-20 w-auto object-contain"
+            />
           </div>
           <div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 dark:from-white dark:to-white bg-clip-text text-transparent">
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-[#8F39D8] to-[#5B2C8E] dark:from-white dark:to-white bg-clip-text text-transparent font-montserrat">
               G CONCURSOS
             </CardTitle>
             <CardDescription className="text-base mt-2">

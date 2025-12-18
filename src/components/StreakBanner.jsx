@@ -5,7 +5,7 @@ export default function StreakBanner({ streak, className = '' }) {
   if (!streak || streak === 0) return null;
 
   return (
-    <div className={`bg-gradient-to-r from-[#8F39D8] to-[#5B2C8E] text-white py-3 px-4 shadow-md ${className}`}>
+    <div className={`bg-gradient-to-r from-[#8F39D8]/90 to-[#5B2C8E]/90 backdrop-blur-sm text-white py-3 px-4 shadow-md rounded-lg ${className}`}>
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="relative">
