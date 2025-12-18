@@ -57,11 +57,19 @@ export default function Questions() {
     staleTime: 0, // Sempre buscar dados frescos
   });
 
-  const { data: attempts = [] } = useQuery({
+  const { data: allAttempts = [] } = useQuery({
     queryKey: ['attempts'],
     queryFn: () => base44.entities.Attempt.list('-created_date', 1000),
     initialData: [],
   });
+
+  // FILTRAR APENAS TENTATIVAS DO USUÁRIO LOGADO
+  const attempts = React.useMemo(() => {
+    if (!user?.id) return [];
+    const filtered = allAttempts.filter(attempt => attempt.user_id === user.id);
+    console.log('🔒 Questions: Tentativas filtradas para o usuário:', filtered.length);
+    return filtered;
+  }, [allAttempts, user?.id]);
 
   const { data: notebooks = [] } = useQuery({
     queryKey: ['notebooks'],

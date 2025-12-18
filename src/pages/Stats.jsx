@@ -77,7 +77,7 @@ export default function Stats() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: attempts = [], isLoading: attemptsLoading } = useQuery({
+  const { data: allAttempts = [], isLoading: attemptsLoading } = useQuery({
     queryKey: ['attempts'],
     queryFn: async () => {
       console.log('📊 Stats: Buscando tentativas...');
@@ -87,6 +87,14 @@ export default function Stats() {
     },
     staleTime: 0,
   });
+
+  // FILTRAR APENAS TENTATIVAS DO USUÁRIO LOGADO
+  const attempts = React.useMemo(() => {
+    if (!user?.id) return [];
+    const filtered = allAttempts.filter(attempt => attempt.user_id === user.id);
+    console.log('🔒 Stats: Tentativas filtradas para o usuário:', filtered.length, 'de', allAttempts.length);
+    return filtered;
+  }, [allAttempts, user?.id]);
 
   const { data: questions = [], isLoading: questionsLoading } = useQuery({
     queryKey: ['questions'],

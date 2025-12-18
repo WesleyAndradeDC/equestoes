@@ -26,12 +26,20 @@ export default function Home() {
   }, []);
 
   // Otimização: cache mais longo e staleTime
-  const { data: attempts = [], isLoading: attemptsLoading } = useQuery({
+  const { data: allAttempts = [], isLoading: attemptsLoading } = useQuery({
     queryKey: ['attempts'],
     queryFn: () => base44.entities.Attempt.list('-created_date', 1000),
     staleTime: 5 * 60 * 1000, // 5 minutos
     cacheTime: 10 * 60 * 1000, // 10 minutos
   });
+
+  // FILTRAR APENAS TENTATIVAS DO USUÁRIO LOGADO
+  const attempts = useMemo(() => {
+    if (!user?.id) return [];
+    const filtered = allAttempts.filter(attempt => attempt.user_id === user.id);
+    console.log('🔒 Home: Tentativas filtradas para o usuário:', filtered.length, 'de', allAttempts.length);
+    return filtered;
+  }, [allAttempts, user?.id]);
 
   const { data: questions = [], isLoading: questionsLoading } = useQuery({
     queryKey: ['questions'],
