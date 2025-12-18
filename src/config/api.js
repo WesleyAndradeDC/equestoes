@@ -19,6 +19,8 @@ export const API_ENDPOINTS = {
   // Auth
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
+  CHECK_EMAIL: '/auth/check-email', // Nova
+  SET_PASSWORD: '/auth/set-password', // Nova
   ME: '/auth/me',
   UPDATE_ME: '/auth/me',
   LOGOUT: '/auth/logout',
@@ -46,6 +48,9 @@ export const API_ENDPOINTS = {
   
   // Tutor
   TUTOR_INVOKE: '/tutor/invoke',
+  
+  // Webhook
+  WEBHOOK_WOOCOMMERCE: '/webhook/woocommerce',
 };
 
 

@@ -12,10 +12,11 @@ datasource db {
 model User {
   id                String    @id @default(uuid())
   email             String    @unique
-  password_hash     String
+  password_hash     String?   // Nullable para primeiro acesso
   full_name         String
   role              String    @default("user") // "user" or "admin"
   subscription_type String?   // "Professor", "Aluno Clube dos Cascas", "Aluno Clube do Pedrão"
+  first_login       Boolean   @default(true) // true = primeiro acesso
   study_streak      Int       @default(0)
   last_study_date   String?   // ISO date string
   created_at        DateTime  @default(now())

@@ -179,6 +179,120 @@ export const updateMe = async (req, res) => {
   }
 };
 
+// Check if email exists and if it's first login
+export const checkEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Validate email
+    if (!email) {
+      return res.status(400).json({ error: 'Email é obrigatório' });
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        first_login: true,
+        subscription_type: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'Email não encontrado',
+        message: 'A plataforma G-Concursos é exclusiva para alunos do Gramatique Clube do Pedrão e Clube dos Cascas.',
+        action: 'join',
+        joinUrl: 'https://gramatiquecursos.com/'
+      });
+    }
+
+    res.json({
+      exists: true,
+      first_login: user.first_login,
+      full_name: user.full_name,
+      email: user.email
+    });
+  } catch (error) {
+    console.error('Check email error:', error);
+    res.status(500).json({ error: 'Erro ao verificar email' });
+  }
+};
+
+// Set password for first login
+export const setPassword = async (req, res) => {
+  try {
+    const { email, password, password_confirm } = req.body;
+
+    // Validate required fields
+    if (!email || !password || !password_confirm) {
+      return res.status(400).json({ error: 'Email, senha e confirmação são obrigatórios' });
+    }
+
+    // Check if passwords match
+    if (password !== password_confirm) {
+      return res.status(400).json({ error: 'As senhas não coincidem' });
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'A senha deve ter no mínimo 6 caracteres' });
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Check if it's not first login anymore
+    if (!user.first_login) {
+      return res.status(400).json({ error: 'Senha já foi definida anteriormente' });
+    }
+
+    // Hash password
+    const password_hash = await bcrypt.hash(password, 10);
+
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { email },
+      data: {
+        password_hash,
+        first_login: false
+      },
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        role: true,
+        subscription_type: true,
+        study_streak: true,
+        last_study_date: true,
+        created_at: true
+      }
+    });
+
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens(updatedUser.id);
+
+    res.json({
+      message: 'Senha definida com sucesso',
+      user: updatedUser,
+      accessToken,
+      refreshToken
+    });
+  } catch (error) {
+    console.error('Set password error:', error);
+    res.status(500).json({ error: 'Erro ao definir senha' });
+  }
+};
+
 // Logout (client-side only, just return success)
 export const logout = async (req, res) => {
   res.json({ message: 'Logout realizado com sucesso' });

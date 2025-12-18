@@ -13,6 +13,7 @@ import notebookRoutes from './routes/notebooks.js';
 import commentRoutes from './routes/comments.js';
 import userRoutes from './routes/users.js';
 import tutorRoutes from './routes/tutor.js';
+import webhookRoutes from './routes/webhook.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -62,7 +63,8 @@ app.get('/', (req, res) => {
       notebooks: '/api/notebooks',
       comments: '/api/comments',
       users: '/api/users',
-      tutor: '/api/tutor'
+      tutor: '/api/tutor',
+      webhook: '/api/webhook/woocommerce'
     },
     documentation: 'https://github.com/WesleyAndradeDC/gconcursos'
   });
@@ -86,6 +88,7 @@ app.use('/api/notebooks', notebookRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tutor', tutorRoutes);
+app.use('/api/webhook', webhookRoutes); // Nova rota para webhooks
 
 // 404 handler
 app.use((req, res) => {
