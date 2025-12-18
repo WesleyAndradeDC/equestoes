@@ -4,12 +4,21 @@ module.exports = {
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['Montserrat', 'system-ui', 'sans-serif'],
+  			montserrat: ['Montserrat', 'sans-serif'],
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+  			gramatique: {
+  				primary: '#8F39D8',
+  				secondary: '#5B2C8E',
+  				light: '#F9F9FB',
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

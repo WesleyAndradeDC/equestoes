@@ -69,11 +69,13 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to={createPageUrl('Home')} className="flex items-center space-x-2 group shrink-0">
-                <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-700 dark:from-white dark:to-white rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all">
-                  <span className="text-white dark:text-black font-bold text-lg">G</span>
-                </div>
-                <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-purple-700 dark:from-white dark:to-white bg-clip-text text-transparent hidden sm:block">
+            <Link to={createPageUrl('Home')} className="flex items-center space-x-3 group shrink-0">
+                <img 
+                  src="https://gramatiquecursos.com/wp-content/uploads/2024/02/gramatique-lilas.svg" 
+                  alt="Gramatique" 
+                  className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
+                />
+                <span className="text-lg font-bold bg-gradient-to-r from-[#8F39D8] to-[#5B2C8E] dark:from-white dark:to-white bg-clip-text text-transparent hidden sm:block font-montserrat">
                   G CONCURSOS
                 </span>
               </Link>
