@@ -41,12 +41,27 @@ export default function Home() {
     return filtered;
   }, [allAttempts, user?.id]);
 
-  const { data: questions = [], isLoading: questionsLoading } = useQuery({
+  const { data: allQuestions = [], isLoading: questionsLoading } = useQuery({
     queryKey: ['questions'],
     queryFn: () => base44.entities.Question.list(),
     staleTime: 10 * 60 * 1000, // 10 minutos
     cacheTime: 15 * 60 * 1000, // 15 minutos
   });
+
+  // FILTRAR QUESTÕES BASEADO NO TIPO DE ASSINATURA DO USUÁRIO
+  // Alunos do Clube do Pedrão só têm acesso a Língua Portuguesa
+  const questions = useMemo(() => {
+    if (!user?.subscription_type) return allQuestions;
+    
+    if (user.subscription_type === 'Aluno Clube do Pedrão') {
+      const filtered = allQuestions.filter(q => q.discipline === 'Língua Portuguesa');
+      console.log('🔒 Home: Questões filtradas para Clube do Pedrão:', filtered.length, 'de', allQuestions.length);
+      return filtered;
+    }
+    
+    // Outros usuários veem todas as questões
+    return allQuestions;
+  }, [allQuestions, user?.subscription_type]);
 
   // Update study streak
   useEffect(() => {
