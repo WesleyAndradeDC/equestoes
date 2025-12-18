@@ -276,3 +276,4 @@ Resposta esperada:
 
 O erro de CORS está corrigido. Após o redeploy finalizar, o login funcionará normalmente em todos os domínios configurados.
 
+

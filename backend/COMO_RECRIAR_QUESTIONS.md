@@ -216,3 +216,4 @@ Se encontrar algum erro:
 
 Execute o script `RECRIAR_TABELA_QUESTIONS.sql` no DBeaver e a tabela será recriada do zero!
 
+

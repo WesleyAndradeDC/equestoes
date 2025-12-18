@@ -188,3 +188,4 @@ Especialmente:
 2. Status Code da requisição /questions na aba Network
 3. Se o arquivo HTML de teste funciona
 
+

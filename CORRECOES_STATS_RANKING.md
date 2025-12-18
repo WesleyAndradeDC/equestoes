@@ -281,3 +281,4 @@ UPDATE users SET full_name = 'Pedro Costa' WHERE email = 'pedro@exemplo.com';
 
 Aguarde o deploy e teste. Se nomes ainda aparecerem como "Usuário Desconhecido", atualize `full_name` no banco de dados.
 
+

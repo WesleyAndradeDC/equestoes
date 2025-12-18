@@ -5,8 +5,25 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/',
   server: {
-    allowedHosts: true
+    allowedHosts: true,
+    port: 5173,
+    host: true
+  },
+  preview: {
+    port: 5173,
+    host: true
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
   },
   resolve: {
     alias: {

@@ -325,3 +325,4 @@ Frontend → React Query sem initialData
 
 Agora com os logs detalhados, qualquer problema será fácil de identificar!
 
+
