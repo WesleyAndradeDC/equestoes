@@ -74,9 +74,17 @@ class AuthService {
     return apiClient.put(API_ENDPOINTS.UPDATE_ME, data);
   }
 
+  // Logout completo: limpa tokens e força reload para /login
+  // Usar apenas quando o usuário clica em "Sair"
   logout() {
     apiClient.removeToken();
     window.location.href = '/login';
+  }
+
+  // Limpa apenas os tokens sem forçar navegação
+  // Usar em checkAuth() para evitar dupla navegação com apiClient
+  clearAuth() {
+    apiClient.removeToken();
   }
 
   isAuthenticated() {

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, ExternalLink, CheckCircle } from 'lucide-react';
+import { Loader2, AlertCircle, ExternalLink, CheckCircle, GraduationCap } from 'lucide-react';
 
 export default function Login() {
   // Estados do formulário

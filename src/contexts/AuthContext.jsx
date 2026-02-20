@@ -19,7 +19,25 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      authService.logout();
+
+      // Identifica se é erro de autenticação real (token inválido/expirado)
+      // ou apenas falha de rede (API em cold start no Render, timeout, etc.)
+      const isAuthError =
+        error.message?.includes('Sessão expirada') ||
+        error.message?.includes('Token') ||
+        error.message?.includes('401') ||
+        error.message?.includes('Unauthorized') ||
+        error.message?.includes('inválido');
+
+      if (isAuthError) {
+        // Token definitivamente inválido: limpa tokens sem forçar window.location
+        // O apiClient já removeu os tokens; o ProtectedRoute redireciona via React Router
+        authService.clearAuth();
+      } else {
+        // Erro de rede ou API indisponível: não desloga o usuário
+        // O token pode ainda ser válido — aguarda próxima tentativa
+        console.warn('⚠️ Não foi possível verificar autenticação (erro de rede). Sessão local mantida.');
+      }
     } finally {
       setLoading(false);
     }

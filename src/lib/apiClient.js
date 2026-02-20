@@ -62,9 +62,10 @@ class ApiClient {
           // Retry original request with new token
           return this.request(endpoint, { ...options, skipRetry: true });
         } else {
-          // Refresh failed, logout
+          // Refresh failed: remove tokens and throw
+          // A navegação para /login é feita pelo ProtectedRoute via React Router
+          // Evita dupla navegação com window.location.href que causava 404 no mobile
           this.removeToken();
-          window.location.href = '/login';
           throw new Error('Sessão expirada. Faça login novamente.');
         }
       }
