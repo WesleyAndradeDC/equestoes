@@ -1,4 +1,87 @@
 import prisma from '../config/database.js';
+import bcrypt from 'bcryptjs';
+
+// Valores válidos para subscription_type e role
+const VALID_SUBSCRIPTION_TYPES = [
+  'Aluno Clube do Pedrão',
+  'Aluno Clube dos Cascas',
+  'Professor',
+];
+const VALID_ROLES = ['user', 'admin'];
+
+// Create user (admin only)
+export const createUser = async (req, res) => {
+  try {
+    const { email, full_name, subscription_type, role } = req.body;
+
+    // Validar campos obrigatórios
+    if (!email || !full_name) {
+      return res.status(400).json({ error: 'Email e nome completo são obrigatórios' });
+    }
+
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Formato de email inválido' });
+    }
+
+    // Validar subscription_type
+    const finalSubscriptionType = subscription_type || 'Aluno Clube do Pedrão';
+    if (!VALID_SUBSCRIPTION_TYPES.includes(finalSubscriptionType)) {
+      return res.status(400).json({
+        error: 'Tipo de assinatura inválido',
+        valid: VALID_SUBSCRIPTION_TYPES
+      });
+    }
+
+    // Validar role
+    const finalRole = role || 'user';
+    if (!VALID_ROLES.includes(finalRole)) {
+      return res.status(400).json({
+        error: 'Role inválido',
+        valid: VALID_ROLES
+      });
+    }
+
+    // Verificar se email já existe
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(409).json({ error: 'Email já cadastrado' });
+    }
+
+    // Criar usuário sem senha (primeiro acesso via login)
+    const user = await prisma.user.create({
+      data: {
+        email,
+        full_name,
+        subscription_type: finalSubscriptionType,
+        role: finalRole,
+        first_login: true,
+        password_hash: null
+      },
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        role: true,
+        subscription_type: true,
+        first_login: true,
+        created_at: true
+      }
+    });
+
+    res.status(201).json({
+      message: 'Usuário criado com sucesso. Ele definirá a senha no primeiro acesso.',
+      user
+    });
+  } catch (error) {
+    console.error('Create user error:', error);
+    if (error.code === 'P2002') {
+      return res.status(409).json({ error: 'Email já cadastrado' });
+    }
+    res.status(500).json({ error: 'Erro ao criar usuário' });
+  }
+};
 
 // List all users (admin only)
 export const listUsers = async (req, res) => {

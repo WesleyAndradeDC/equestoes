@@ -1,10 +1,10 @@
 import { API_BASE_URL } from '@/config/api';
 
+const isDev = import.meta.env.DEV;
+
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
-    console.log('🔧 ApiClient inicializado com baseURL:', this.baseURL);
-    console.log('🌍 import.meta.env.VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
   }
 
   getToken() {
@@ -24,14 +24,6 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getToken();
 
-    console.log('🔗 ApiClient Request:', {
-      baseURL: this.baseURL,
-      endpoint,
-      fullURL: url,
-      hasToken: !!token,
-      method: options.method || 'GET'
-    });
-
     const config = {
       ...options,
       headers: {
@@ -40,31 +32,20 @@ class ApiClient {
       },
     };
 
-    // Add authorization header if token exists
     if (token && !options.skipAuth) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
 
     try {
-      console.log('📤 Fazendo requisição para:', url);
       const response = await fetch(url, config);
-      console.log('📥 Resposta recebida:', {
-        status: response.status,
-        ok: response.ok,
-        statusText: response.statusText
-      });
 
-      // Handle 401 Unauthorized (token expired)
+      // Token expirado: tenta renovar
       if (response.status === 401 && token && !options.skipRetry) {
-        // Try to refresh token
         const refreshed = await this.refreshToken();
         if (refreshed) {
-          // Retry original request with new token
           return this.request(endpoint, { ...options, skipRetry: true });
         } else {
-          // Refresh failed: remove tokens and throw
-          // A navegação para /login é feita pelo ProtectedRoute via React Router
-          // Evita dupla navegação com window.location.href que causava 404 no mobile
+          // Remove tokens e lança erro para ser tratado pelo AuthContext/ProtectedRoute
           this.removeToken();
           throw new Error('Sessão expirada. Faça login novamente.');
         }
@@ -78,7 +59,9 @@ class ApiClient {
 
       return data;
     } catch (error) {
-      console.error('API Error:', error);
+      if (isDev) {
+        console.error(`API Error [${options.method || 'GET'} ${endpoint}]:`, error.message);
+      }
       throw error;
     }
   }
@@ -100,17 +83,13 @@ class ApiClient {
       this.setToken(data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       return true;
-    } catch (error) {
-      console.error('Refresh token error:', error);
+    } catch {
       return false;
     }
   }
 
   async get(endpoint, options = {}) {
-    return this.request(endpoint, {
-      ...options,
-      method: 'GET',
-    });
+    return this.request(endpoint, { ...options, method: 'GET' });
   }
 
   async post(endpoint, body, options = {}) {
@@ -130,15 +109,9 @@ class ApiClient {
   }
 
   async delete(endpoint, options = {}) {
-    return this.request(endpoint, {
-      ...options,
-      method: 'DELETE',
-    });
+    return this.request(endpoint, { ...options, method: 'DELETE' });
   }
 }
 
 export const apiClient = new ApiClient();
 export default apiClient;
-
-
-

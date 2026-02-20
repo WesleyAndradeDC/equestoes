@@ -2,6 +2,7 @@ import express from 'express';
 import {
   listUsers,
   getUser,
+  createUser,
   updateUser,
   deleteUser
 } from '../controllers/userController.js';
@@ -11,6 +12,7 @@ const router = express.Router();
 
 // Admin only routes
 router.get('/', authenticate, requireAdmin, listUsers);
+router.post('/', authenticate, requireAdmin, createUser);
 router.get('/:id', authenticate, requireAdmin, getUser);
 router.put('/:id', authenticate, requireAdmin, updateUser);
 router.delete('/:id', authenticate, requireAdmin, deleteUser);

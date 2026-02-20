@@ -151,7 +151,7 @@ export default function Layout({ children, currentPageName }) {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
                       isActive
-                        ? 'bg-emerald-600 text-white'
+                        ? 'bg-purple-600 text-white shadow-md'
                         : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
@@ -174,7 +174,7 @@ export default function Layout({ children, currentPageName }) {
       <footer className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border-t border-slate-200/60 dark:border-slate-700/60 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-            © 2025 G CONCURSOS - Plataforma de questões do gramatique
+            © 2025 G-CONCURSOS - Plataforma de questões do Gramatique
           </p>
         </div>
       </footer>

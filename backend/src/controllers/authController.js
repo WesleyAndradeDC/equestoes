@@ -2,6 +2,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/database.js';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // Generate JWT tokens
 const generateTokens = (userId) => {
   const accessToken = jwt.sign(
@@ -86,19 +88,21 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: 'Email e senha são obrigatórios' });
     }
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (!user) {
-      return res.status(401).json({ error: 'Credenciais inválidas' });
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ error: 'Formato de email inválido' });
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() }
+    });
 
-    if (!isValidPassword) {
+    // Proteção contra timing attack: sempre executa bcrypt mesmo se user não existir
+    const dummyHash = '$2a$10$abcdefghijklmnopqrstuuabcdefghijklmnopqrstuuabcdefghij';
+    const hashToCompare = user?.password_hash || dummyHash;
+    const isValidPassword = await bcrypt.compare(password, hashToCompare);
+
+    if (!user || !isValidPassword || !user.password_hash) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
@@ -189,9 +193,13 @@ export const checkEmail = async (req, res) => {
       return res.status(400).json({ error: 'Email é obrigatório' });
     }
 
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ error: 'Formato de email inválido' });
+    }
+
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase().trim() },
       select: {
         id: true,
         email: true,
@@ -232,6 +240,10 @@ export const setPassword = async (req, res) => {
       return res.status(400).json({ error: 'Email, senha e confirmação são obrigatórios' });
     }
 
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ error: 'Formato de email inválido' });
+    }
+
     // Check if passwords match
     if (password !== password_confirm) {
       return res.status(400).json({ error: 'As senhas não coincidem' });
@@ -244,7 +256,7 @@ export const setPassword = async (req, res) => {
 
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email: email.toLowerCase().trim() }
     });
 
     if (!user) {

@@ -121,7 +121,7 @@ export default function Login() {
           </div>
           <div>
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-[#8F39D8] to-[#5B2C8E] dark:from-white dark:to-white bg-clip-text text-transparent font-montserrat">
-              G CONCURSOS
+              G-CONCURSOS
             </CardTitle>
             <CardDescription className="text-base mt-2">
               {step === 1 && 'Plataforma de questões do Gramatique'}

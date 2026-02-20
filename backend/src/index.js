@@ -1,9 +1,19 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 
-// Load environment variables
+// Carregar variáveis de ambiente ANTES de qualquer import que use process.env
 dotenv.config();
+
+// Validar variáveis de ambiente obrigatórias na inicialização
+const REQUIRED_ENV = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL'];
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missingEnv.length > 0) {
+  console.error(`❌ Variáveis de ambiente faltando: ${missingEnv.join(', ')}`);
+  process.exit(1);
+}
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -17,98 +27,127 @@ import webhookRoutes from './routes/webhook.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Configure CORS to accept multiple origins
+// ─── SEGURANÇA: Helmet ────────────────────────────────────────────────────────
+// Define cabeçalhos HTTP de segurança (XSS, Clickjacking, MIME sniffing, etc.)
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: isProduction
+      ? undefined // Helmet padrão em produção
+      : false,    // Desabilitado em dev para facilitar debug
+  })
+);
+
+// ─── CORS ─────────────────────────────────────────────────────────────────────
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
   'https://gconcursos-frontend.onrender.com',
   'https://www.app.gramatiquecursos.com',
   'https://app.gramatiquecursos.com',
-  process.env.FRONTEND_URL
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-// Middleware
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`⚠️  CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Permitir sem origin (apps mobile, Postman, etc.)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
-// Root endpoint - API info
+// ─── BODY PARSING ─────────────────────────────────────────────────────────────
+// Limita o tamanho do payload para evitar ataques de payload grande
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// ─── RATE LIMITING ────────────────────────────────────────────────────────────
+// Rate limit global: 100 req/15min por IP
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas requisições. Tente novamente em alguns minutos.' },
+});
+
+// Rate limit agressivo para autenticação: 10 tentativas/15min por IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+  skipSuccessfulRequests: true, // Não conta requisições bem-sucedidas
+});
+
+app.use(globalLimiter);
+
+// ─── ROOT / HEALTH ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({
     name: 'G-Concursos API',
     version: '1.0.0',
     status: 'online',
-    message: 'API REST para plataforma G-Concursos - Gramatique',
-    endpoints: {
-      health: '/health',
-      auth: '/api/auth/*',
-      questions: '/api/questions',
-      attempts: '/api/attempts',
-      notebooks: '/api/notebooks',
-      comments: '/api/comments',
-      users: '/api/users',
-      tutor: '/api/tutor',
-      webhook: '/api/webhook/woocommerce'
-    },
-    documentation: 'https://github.com/WesleyAndradeDC/gconcursos'
   });
 });
 
-// Health check
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'G-Concursos API is running',
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: Math.floor(process.uptime()),
   });
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
+// ─── ROUTES ───────────────────────────────────────────────────────────────────
+// Rotas de autenticação com rate limit reforçado
+app.use('/api/auth', authLimiter, authRoutes);
+
+// Demais rotas
 app.use('/api/questions', questionRoutes);
 app.use('/api/attempts', attemptRoutes);
 app.use('/api/notebooks', notebookRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tutor', tutorRoutes);
-app.use('/api/webhook', webhookRoutes); // Nova rota para webhooks
+app.use('/api/webhook', webhookRoutes);
 
-// 404 handler
+// ─── 404 ──────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint não encontrado' });
 });
 
-// Error handler
+// ─── ERROR HANDLER ────────────────────────────────────────────────────────────
+// Nunca expõe stack trace em produção
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Erro interno do servidor'
-  });
+  const status = err.status || 500;
+  const message = isProduction
+    ? (status < 500 ? err.message : 'Erro interno do servidor')
+    : err.message;
+
+  if (status >= 500) {
+    console.error('💥 Server error:', err);
+  }
+
+  res.status(status).json({ error: message });
 });
 
-// Start server
+// ─── START ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/health`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🚀 G-Concursos API rodando na porta ${PORT}`);
+  console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
 
 export default app;
-
