@@ -50,7 +50,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    authService.logout();
+    // Limpa tokens e reseta o estado do usuário.
+    // O ProtectedRoute detecta user === null e faz o redirect para /login
+    // via <Navigate replace />, sem nenhuma requisição ao servidor.
+    authService.clearAuth();
     setUser(null);
   };
 
