@@ -16,14 +16,14 @@ if (missingEnv.length > 0) {
 }
 
 // Import routes
-import authRoutes from './routes/auth.js';
+import authRoutes     from './routes/auth.js';
 import questionRoutes from './routes/questions.js';
-import attemptRoutes from './routes/attempts.js';
+import attemptRoutes  from './routes/attempts.js';
 import notebookRoutes from './routes/notebooks.js';
-import commentRoutes from './routes/comments.js';
-import userRoutes from './routes/users.js';
-import tutorRoutes from './routes/tutor.js';
-import webhookRoutes from './routes/webhook.js';
+import commentRoutes  from './routes/comments.js';
+import userRoutes     from './routes/users.js';
+import tutorRoutes    from './routes/tutor.js';
+import webhookRoutes  from './routes/webhook.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -68,7 +68,20 @@ app.use(
 );
 
 // ─── BODY PARSING ─────────────────────────────────────────────────────────────
-// Limita o tamanho do payload para evitar ataques de payload grande
+// Webhooks: captura o raw body ANTES do parse JSON para verificação de assinatura HMAC
+// (WooCommerce assina o payload bruto com HMAC-SHA256)
+app.use('/api/webhook', (req, _res, next) => {
+  let data = '';
+  req.on('data', (chunk) => { data += chunk; });
+  req.on('end', () => {
+    req.rawBody = data;
+    // Faz o parse manual para manter req.body disponível normalmente
+    try { req.body = JSON.parse(data); } catch { req.body = {}; }
+    next();
+  });
+});
+
+// Demais rotas: parse automático (limita payload para evitar ataques)
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 

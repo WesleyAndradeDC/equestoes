@@ -1,4 +1,7 @@
-// This is your Prisma schema file
+// ============================================================
+// G-CONCURSOS — Prisma Schema
+// PostgreSQL · Prisma ORM
+// ============================================================
 
 generator client {
   provider = "prisma-client-js"
@@ -9,88 +12,161 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─────────────────────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────────────────────
 model User {
-  id                String    @id @default(uuid())
-  email             String    @unique
-  password_hash     String?   // Nullable para primeiro acesso
-  full_name         String
-  role              String    @default("user") // "user" or "admin"
-  subscription_type String?   // "Professor", "Aluno Clube dos Cascas", "Aluno Clube do Pedrão"
-  first_login       Boolean   @default(true) // true = primeiro acesso
-  study_streak      Int       @default(0)
-  last_study_date   String?   // ISO date string
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
+  id                  String   @id @default(uuid())
+  email               String   @unique
+  password_hash       String?  // null = primeiro acesso ainda não definiu senha
+  full_name           String
+  role                String   @default("user")         // "user" | "admin"
 
-  // Relations
-  questions         Question[]
-  attempts          Attempt[]
-  notebooks         Notebook[]
-  comments          Comment[]
+  // ── Assinatura (cache para queries rápidas) ──────────────
+  subscription_type   String?  // "Aluno Clube do Pedrão" | "Aluno Clube dos Cascas" | "Professor"
+  subscription_status String   @default("inactive")
+  // Valores: active | pending-cancel | on-hold | cancelled | expired | pending | inactive
+
+  first_login         Boolean  @default(true)  // true = precisa definir senha
+  study_streak        Int      @default(0)
+  last_study_date     String?  // ISO date string
+
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  // ── Relações ─────────────────────────────────────────────
+  questions     Question[]
+  attempts      Attempt[]
+  notebooks     Notebook[]
+  comments      Comment[]
+  subscriptions Subscription[]
 
   @@map("users")
 }
 
-model Question {
-  id            String    @id @default(uuid())
-  code          String?   @unique
-  text          String
-  discipline    String
-  difficulty    String    // "Fácil", "Médio", "Difícil"
-  exam_board    String?
-  year          Int?
-  position      String?
-  option_a      String
-  option_b      String
-  option_c      String
-  option_d      String
-  option_e      String
-  correct_answer String   // "A", "B", "C", "D", "E"
-  explanation   String
-  question_type String?
-  subjects      String[]  // Array of subjects
-  created_by    String?
-  created_date  DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+// ─────────────────────────────────────────────────────────────
+// SUBSCRIPTION  ←  Fonte da verdade para controle de acesso
+// ─────────────────────────────────────────────────────────────
+model Subscription {
+  id      String @id @default(uuid())
+  user_id String
 
-  // Relations
-  creator       User?     @relation(fields: [created_by], references: [email], onDelete: SetNull)
-  attempts      Attempt[]
-  notebooks     NotebookQuestion[]
-  comments      Comment[]
+  // ── Status e tipo ─────────────────────────────────────────
+  status            String  @default("inactive")
+  // Valores: active | pending-cancel | on-hold | cancelled | expired | pending | inactive
+  subscription_type String?
+  // "Aluno Clube do Pedrão" | "Aluno Clube dos Cascas"
+
+  // ── IDs externos WooCommerce ──────────────────────────────
+  woo_subscription_id String? @unique  // ID da subscription no WooCommerce Subscriptions
+  woo_order_id        String?          // ID do pedido de origem (order webhook fallback)
+
+  // ── Datas de controle ─────────────────────────────────────
+  started_at      DateTime? // Quando a assinatura começou
+  expires_at      DateTime? // Data de término/expiração (null = sem prazo)
+  next_payment_at DateTime? // Próxima cobrança
+  cancelled_at    DateTime? // Data do cancelamento
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // ── Relações ─────────────────────────────────────────────
+  user    User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  history SubscriptionHistory[]
+
+  @@index([user_id])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SUBSCRIPTION HISTORY  ←  Auditoria de mudanças de status
+// ─────────────────────────────────────────────────────────────
+model SubscriptionHistory {
+  id              String  @id @default(uuid())
+  subscription_id String
+
+  previous_status String? // null quando criada pela primeira vez
+  new_status      String
+  reason          String? // "webhook" | "created" | "order.completed" | "manual"
+  woo_event       String? // Header X-WC-Webhook-Topic ("subscription.updated", etc.)
+  payload_id      String? // ID do objeto WooCommerce para rastreabilidade
+
+  created_at DateTime @default(now())
+
+  // ── Relação ───────────────────────────────────────────────
+  subscription Subscription @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+
+  @@index([subscription_id])
+  @@map("subscription_history")
+}
+
+// ─────────────────────────────────────────────────────────────
+// QUESTION
+// ─────────────────────────────────────────────────────────────
+model Question {
+  id             String   @id @default(uuid())
+  code           String?  @unique
+  text           String
+  discipline     String
+  difficulty     String   // "Fácil" | "Médio" | "Difícil"
+  exam_board     String?
+  year           Int?
+  position       String?
+  option_a       String
+  option_b       String
+  option_c       String
+  option_d       String
+  option_e       String
+  correct_answer String   // "A" | "B" | "C" | "D" | "E"
+  explanation    String
+  question_type  String?
+  subjects       String[] // Array de assuntos
+  created_by     String?
+  created_date   DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  creator  User?              @relation(fields: [created_by], references: [email], onDelete: SetNull)
+  attempts Attempt[]
+  notebooks NotebookQuestion[]
+  comments Comment[]
 
   @@map("questions")
 }
 
+// ─────────────────────────────────────────────────────────────
+// ATTEMPT
+// ─────────────────────────────────────────────────────────────
 model Attempt {
-  id            String    @id @default(uuid())
+  id            String   @id @default(uuid())
   question_id   String
   user_id       String
   chosen_answer String
   is_correct    Boolean
   answered_at   DateTime
-  created_date  DateTime  @default(now())
-  created_by    String?   // email for backward compatibility
+  created_date  DateTime @default(now())
+  created_by    String?  // email (compatibilidade retroativa)
 
-  // Relations
-  question      Question  @relation(fields: [question_id], references: [id], onDelete: Cascade)
-  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("attempts")
 }
 
+// ─────────────────────────────────────────────────────────────
+// NOTEBOOK
+// ─────────────────────────────────────────────────────────────
 model Notebook {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  color       String    @default("blue")
-  created_by  String
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  color        String   @default("blue")
+  created_by   String
   created_date DateTime @default(now())
-  updated_at  DateTime  @updatedAt
+  updated_at   DateTime @updatedAt
 
-  // Relations
-  creator     User      @relation(fields: [created_by], references: [email], onDelete: Cascade)
-  questions   NotebookQuestion[]
+  creator   User               @relation(fields: [created_by], references: [email], onDelete: Cascade)
+  questions NotebookQuestion[]
 
   @@map("notebooks")
 }
@@ -100,27 +176,27 @@ model NotebookQuestion {
   question_id String
   added_at    DateTime @default(now())
 
-  // Relations
-  notebook    Notebook @relation(fields: [notebook_id], references: [id], onDelete: Cascade)
-  question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  notebook Notebook @relation(fields: [notebook_id], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
 
   @@id([notebook_id, question_id])
   @@map("notebook_questions")
 }
 
+// ─────────────────────────────────────────────────────────────
+// COMMENT
+// ─────────────────────────────────────────────────────────────
 model Comment {
-  id          String   @id @default(uuid())
-  question_id String
-  user_id     String?
-  text        String
-  author_name String
-  author_role String
+  id           String   @id @default(uuid())
+  question_id  String
+  user_id      String?
+  text         String
+  author_name  String
+  author_role  String
   created_date DateTime @default(now())
 
-  // Relations
-  question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
-  user        User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  question Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
 
   @@map("comments")
 }
-

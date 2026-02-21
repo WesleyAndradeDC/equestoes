@@ -6,15 +6,15 @@ import {
   updateNotebook,
   deleteNotebook
 } from '../controllers/notebookController.js';
-import { authenticate } from '../middlewares/auth.js';
+import { authenticate, requireActiveSubscription } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-router.get('/', authenticate, listNotebooks);
-router.get('/:id', authenticate, getNotebook);
-router.post('/', authenticate, createNotebook);
-router.put('/:id', authenticate, updateNotebook);
-router.delete('/:id', authenticate, deleteNotebook);
+router.get('/',    authenticate, requireActiveSubscription, listNotebooks);
+router.get('/:id', authenticate, requireActiveSubscription, getNotebook);
+router.post('/',   authenticate, requireActiveSubscription, createNotebook);
+router.put('/:id', authenticate, requireActiveSubscription, updateNotebook);
+router.delete('/:id', authenticate, requireActiveSubscription, deleteNotebook);
 
 export default router;
 

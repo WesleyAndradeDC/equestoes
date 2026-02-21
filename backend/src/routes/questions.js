@@ -4,19 +4,23 @@ import {
   getQuestion,
   createQuestion,
   updateQuestion,
-  deleteQuestion
+  deleteQuestion,
 } from '../controllers/questionController.js';
-import { authenticate, requireProfessor } from '../middlewares/auth.js';
+import {
+  authenticate,
+  requireProfessor,
+  requireActiveSubscription,
+} from '../middlewares/auth.js';
 
 const router = express.Router();
 
-// Public/authenticated routes
-router.get('/', authenticate, listQuestions);
-router.get('/:id', authenticate, getQuestion);
+// Conteúdo protegido: requer autenticação + assinatura ativa
+router.get('/',    authenticate, requireActiveSubscription, listQuestions);
+router.get('/:id', authenticate, requireActiveSubscription, getQuestion);
 
-// Professor/admin only routes
-router.post('/', authenticate, requireProfessor, createQuestion);
-router.put('/:id', authenticate, requireProfessor, updateQuestion);
+// Criação/edição: professor ou admin (subscription implicitamente garantida pelo requireProfessor)
+router.post('/',    authenticate, requireProfessor, createQuestion);
+router.put('/:id',  authenticate, requireProfessor, updateQuestion);
 router.delete('/:id', authenticate, requireProfessor, deleteQuestion);
 
 export default router;
