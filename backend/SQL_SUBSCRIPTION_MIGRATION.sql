@@ -114,10 +114,9 @@ SELECT
     'active',
     'migration'
 FROM subscriptions s
-WHERE s.reason IS NULL  -- Apenas as recém inseridas
-  AND NOT EXISTS (
-      SELECT 1 FROM subscription_history h WHERE h.subscription_id = s.id
-  );
+WHERE NOT EXISTS (
+    SELECT 1 FROM subscription_history h WHERE h.subscription_id = s.id
+);
 
 -- ─── ETAPA 6: Trigger para updated_at automático ─────────────────────────────
 CREATE OR REPLACE FUNCTION fn_update_updated_at()
