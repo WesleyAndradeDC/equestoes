@@ -32,7 +32,7 @@ export default function NotFound() {
         {/* Action */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link to="/">
-            <Button className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-medium flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all">
+            <Button className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white hover:text-white px-8 py-3 rounded-lg font-medium flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all">
               <Home className="w-5 h-5" />
               Voltar para Início
             </Button>

@@ -180,7 +180,7 @@ function UserFormDialog({ open, onOpenChange, onSubmit, loading, editUser = null
             <Button
               type="submit"
               disabled={loading}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="bg-purple-600 hover:bg-purple-700 text-white hover:text-white"
             >
               {loading ? (
                 <>
@@ -321,7 +321,7 @@ export default function Admin() {
           </p>
           <Button
             onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-users'] })}
-            className="mt-4 bg-purple-600 hover:bg-purple-700"
+            className="mt-4 bg-purple-600 hover:bg-purple-700 text-white hover:text-white"
           >
             Tentar Novamente
           </Button>
@@ -353,7 +353,7 @@ export default function Admin() {
 
         <Button
           onClick={() => setShowCreateDialog(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white gap-2 shadow-md"
+          className="bg-purple-600 hover:bg-purple-700 text-white hover:text-white gap-2 shadow-md"
         >
           <UserPlus className="w-4 h-4" />
           Adicionar Usuário

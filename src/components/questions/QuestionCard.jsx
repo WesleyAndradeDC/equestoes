@@ -190,7 +190,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
           <Button
             onClick={handleSubmit}
             disabled={!selectedAnswer || isSubmitting}
-            className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-md"
+            className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:text-white shadow-md"
           >
             {isSubmitting ? 'Enviando...' : 'Confirmar Resposta'}
           </Button>

@@ -69,7 +69,7 @@ export default function CommentSection({ questionId, canComment = false }) {
             <Button
               onClick={handleSubmit}
               disabled={!newComment.trim() || createCommentMutation.isPending}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-purple-600 hover:bg-purple-700 text-white hover:text-white"
             >
               {createCommentMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -376,7 +376,7 @@ export default function Stats() {
             <Button
               variant={compareMode ? 'default' : 'outline'}
               onClick={() => setCompareMode(!compareMode)}
-              className={compareMode ? 'bg-purple-600 hover:bg-purple-700' : ''}>
+              className={compareMode ? 'bg-purple-600 hover:bg-purple-700 text-white hover:text-white' : ''}>
 
               <ArrowLeftRight className="w-4 h-4 mr-2" />
               Comparar Períodos

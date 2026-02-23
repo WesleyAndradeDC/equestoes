@@ -304,7 +304,7 @@ export default function Questions() {
           </p>
           <Button 
             onClick={() => window.location.reload()} 
-            className="mt-4 bg-purple-600 hover:bg-purple-700"
+            className="mt-4 bg-purple-600 hover:bg-purple-700 text-white hover:text-white"
           >
             Tentar Novamente
           </Button>
@@ -409,7 +409,7 @@ export default function Questions() {
                             variant={currentPage === pageNum ? 'default' : 'outline'}
                             className={`w-10 h-10 ${
                               currentPage === pageNum
-                                ? 'bg-purple-600 hover:bg-purple-700'
+                                ? 'bg-purple-600 hover:bg-purple-700 text-white hover:text-white'
                                 : ''
                             }`}
                           >
@@ -490,7 +490,7 @@ export default function Questions() {
             <Button
               onClick={() => handleSaveToNotebook(savingQuestionId)}
               disabled={!selectedNotebook && !newNotebookName}
-              className="w-full bg-purple-600 hover:bg-purple-700"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white hover:text-white"
             >
               Salvar Questão
             </Button>

@@ -86,7 +86,7 @@ export default function Notebooks() {
 
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-9 from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-md">
+            <Button className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-9 from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:text-white shadow-md">
               <Plus className="w-4 h-4 mr-2" />
               Novo Caderno
             </Button>
@@ -133,7 +133,7 @@ export default function Notebooks() {
                 </Select>
               </div>
 
-              <Button onClick={handleCreate} className="w-full bg-purple-600 hover:bg-purple-700">
+              <Button onClick={handleCreate} className="w-full bg-purple-600 hover:bg-purple-700 text-white hover:text-white">
                 Criar Caderno
               </Button>
             </div>
@@ -154,7 +154,7 @@ export default function Notebooks() {
             </div>
             <Button
             onClick={() => setShowCreateDialog(true)}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800">
+            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:text-white">
 
               <Plus className="w-4 h-4 mr-2" />
               Criar Primeiro Caderno

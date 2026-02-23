@@ -160,7 +160,7 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-medium"
+                className="w-full h-11 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:text-white font-medium"
                 disabled={loading}
               >
                 {loading ? (
@@ -376,7 +376,7 @@ export default function Login() {
                   href={joinUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white hover:text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all"
                 >
                   Conhecer o Gramatique
                   <ExternalLink className="w-4 h-4" />

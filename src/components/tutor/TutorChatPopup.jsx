@@ -201,7 +201,7 @@ Seja didático, use exemplos práticos e responda de forma clara e objetiva. Res
                   <Button
                     onClick={handleSendMessage}
                     disabled={isLoading || !inputMessage.trim()}
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-purple-600 hover:bg-purple-700 text-white hover:text-white"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
