@@ -1,32 +1,27 @@
-﻿/**
- * auth.js - Middlewares de autenticacao e autorizacao
+/**
+ * auth.js — Middlewares de autenticação e autorização
  *
  * Exporta:
- *   authenticate              - Valida JWT e carrega req.user
- *   requireAdmin              - Bloqueia se nao for admin
- *   requireProfessor          - Bloqueia se nao for professor ou admin
- *   requireActiveSubscription - Bloqueia se assinatura nao estiver ativa
- *
- * NOTA SOBRE MIGRACAO:
- *   O campo subscription_status soh e selecionado do banco SE a coluna
- *   ja existir (apos SQL_SUBSCRIPTION_MIGRATION.sql ser executado).
- *   Enquanto isso, requireActiveSubscription libera todos os usuarios
- *   autenticados (comportamento identico ao sistema anterior).
+ *   authenticate              → Valida JWT e carrega req.user
+ *   requireAdmin              → Bloqueia se não for admin
+ *   requireProfessor          → Bloqueia se não for professor ou admin
+ *   requireActiveSubscription → Bloqueia se assinatura não estiver ativa
  */
 
 import jwt from 'jsonwebtoken';
 import prisma from '../config/database.js';
+import { ACTIVE_STATUSES } from '../utils/subscriptionUtils.js';
 
-// Status que concedem acesso a plataforma
-const ACTIVE_STATUSES = new Set(['active', 'pending-cancel']);
-
+// ─────────────────────────────────────────────────────────────────────────────
 // authenticate
+// Valida o token JWT e carrega o usuário completo em req.user
+// ─────────────────────────────────────────────────────────────────────────────
 export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Token de autenticacao nao fornecido' });
+      return res.status(401).json({ error: 'Token de autenticação não fornecido' });
     }
 
     const token   = authHeader.substring(7);
@@ -35,39 +30,26 @@ export const authenticate = async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where:  { id: decoded.userId },
       select: {
-        id:                true,
-        email:             true,
-        full_name:         true,
-        role:              true,
-        subscription_type: true,
-        study_streak:      true,
-        last_study_date:   true,
+        id:                  true,
+        email:               true,
+        full_name:           true,
+        role:                true,
+        subscription_type:   true,
+        subscription_status: true, // ← campo necessário para requireActiveSubscription
+        study_streak:        true,
+        last_study_date:     true,
       },
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'Usuario nao encontrado' });
-    }
-
-    // Tenta buscar subscription_status se a coluna ja existir no banco.
-    // Apos rodar SQL_SUBSCRIPTION_MIGRATION.sql, isto sempre funciona.
-    try {
-      const userWithStatus = await prisma.user.findUnique({
-        where:  { id: decoded.userId },
-        select: { subscription_status: true },
-      });
-      user.subscription_status = userWithStatus?.subscription_status ?? null;
-    } catch {
-      // Coluna ainda nao existe (pre-migracao): subscription_status = null
-      // requireActiveSubscription trata null como "liberar acesso"
-      user.subscription_status = null;
+      return res.status(401).json({ error: 'Usuário não encontrado' });
     }
 
     req.user = user;
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ error: 'Token invalido' });
+      return res.status(401).json({ error: 'Token inválido' });
     }
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Token expirado' });
@@ -76,59 +58,72 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // requireAdmin
+// Deve ser usado APÓS authenticate
+// ─────────────────────────────────────────────────────────────────────────────
 export const requireAdmin = (req, res, next) => {
   if (req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Acesso negado. Requer permissoes de administrador.' });
+    return res.status(403).json({
+      error: 'Acesso negado. Requer permissões de administrador.',
+    });
   }
   next();
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // requireProfessor
+// Permite admin ou professor
+// Deve ser usado APÓS authenticate
+// ─────────────────────────────────────────────────────────────────────────────
 export const requireProfessor = (req, res, next) => {
-  if (req.user.role !== 'admin' && req.user.subscription_type !== 'Professor') {
-    return res.status(403).json({ error: 'Acesso negado. Requer permissoes de professor.' });
+  if (
+    req.user.role !== 'admin' &&
+    req.user.subscription_type !== 'Professor'
+  ) {
+    return res.status(403).json({
+      error: 'Acesso negado. Requer permissões de professor.',
+    });
   }
   next();
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // requireActiveSubscription
-// Verifica assinatura ativa antes de acessar conteudo protegido.
 //
-// Comportamento:
-//   - Admin                          -> acesso irrestrito
-//   - subscription_status = null     -> acesso permitido (pre-migracao)
-//   - active | pending-cancel        -> acesso permitido
-//   - cancelled, expired, on-hold... -> 403 com mensagem descritiva
+// Verifica se o usuário possui uma assinatura ativa antes de acessar
+// conteúdo protegido (questões, tentativas, cadernos, tutor, etc.).
 //
-// Uso (apos authenticate):
+// Regras:
+//   • Admin  → sempre tem acesso (independente de assinatura)
+//   • Status "active" ou "pending-cancel" → tem acesso
+//   • Qualquer outro status → 403 com mensagem descritiva
+//
+// Deve ser usado APÓS authenticate:
 //   router.get('/rota', authenticate, requireActiveSubscription, handler)
+// ─────────────────────────────────────────────────────────────────────────────
 export const requireActiveSubscription = (req, res, next) => {
   const { role, subscription_status } = req.user;
 
-  // Admins sempre tem acesso
+  // Admins têm acesso irrestrito
   if (role === 'admin') return next();
 
-  // Pre-migracao ou campo nao disponivel: libera acesso (nao quebra o sistema)
-  if (subscription_status === undefined || subscription_status === null) {
-    return next();
-  }
-
-  // Assinatura ativa -> permitir
+  // Assinatura ativa → permitir
   if (ACTIVE_STATUSES.has(subscription_status)) return next();
 
+  // Mensagens contextuais por status
   const statusMessages = {
     cancelled:        'Sua assinatura foi cancelada. Renove para continuar acessando.',
     expired:          'Sua assinatura expirou. Renove para continuar acessando.',
-    'on-hold':        'Sua assinatura esta pausada por pendencia de pagamento.',
-    pending:          'Aguardando confirmacao do pagamento.',
-    'pending-cancel': 'Sua assinatura esta ativa ate o fim do periodo.',
-    inactive:         'Voce nao possui uma assinatura ativa.',
+    'on-hold':        'Sua assinatura está pausada por pendência de pagamento.',
+    pending:          'Aguardando confirmação do pagamento.',
+    'pending-cancel': 'Sua assinatura está ativa até o fim do período.',
+    inactive:         'Você não possui uma assinatura ativa.',
   };
 
-  const message = statusMessages[subscription_status] ?? 'Acesso negado: assinatura nao ativa.';
-
-  return res.status(403).json({
+  const message =
+    statusMessages[subscription_status] ??
+    'Acesso negado: assinatura não ativa.';  return res.status(403).json({
     error:               'Assinatura inativa',
     message,
     subscription_status,

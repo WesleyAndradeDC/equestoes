@@ -40,6 +40,9 @@ export const API_ENDPOINTS = {
   CREATE_USER: '/users',
   USER_BY_ID: (id) => `/users/${id}`,
 
+  // Ranking
+  RANKING: '/ranking',
+
   // Tutor
   TUTOR_INVOKE: '/tutor/invoke',
 
