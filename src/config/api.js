@@ -43,6 +43,11 @@ export const API_ENDPOINTS = {
   // Ranking
   RANKING: '/ranking',
 
+  // Reports
+  REPORTS: '/reports',
+  REPORT_COUNTS: '/reports/counts',
+  REPORT_BY_ID: (id) => `/reports/${id}`,
+
   // Tutor
   TUTOR_INVOKE: '/tutor/invoke',
 

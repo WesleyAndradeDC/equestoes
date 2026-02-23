@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bookmark, BookmarkCheck, CheckCircle2, XCircle, Lightbulb, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bookmark, BookmarkCheck, CheckCircle2, XCircle, Lightbulb, MessageCircle, ChevronDown, ChevronUp, Flag } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import CommentSection from './CommentSection';
+import ReportModal from './ReportModal';
 
 export default function QuestionCard({ question, onAnswer, savedInNotebook = false, onSaveToggle, previouslyAnswered = null }) {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -13,6 +14,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
   const [showExplanation, setShowExplanation] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // Reset state when question changes
   React.useEffect(() => {
@@ -21,6 +23,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
     setShowExplanation(false);
     setShowComments(false);
     setIsSubmitting(false);
+    setShowReportModal(false);
   }, [question.id]);
 
   const options = [
@@ -138,20 +141,33 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
               </div>
             )}
           </div>
-          {onSaveToggle && (
+          <div className="flex items-center gap-1 shrink-0">
+            {onSaveToggle && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onSaveToggle}
+                title={savedInNotebook ? 'Remover do caderno' : 'Salvar no caderno'}
+              >
+                {savedInNotebook ? (
+                  <BookmarkCheck className="w-5 h-5 text-purple-600 fill-purple-600" />
+                ) : (
+                  <Bookmark className="w-5 h-5 text-slate-400 hover:text-purple-600" />
+                )}
+              </Button>
+            )}
+
+            {/* Botão de reportar questão */}
             <Button
               variant="ghost"
               size="icon"
-              onClick={onSaveToggle}
-              className="shrink-0"
+              onClick={() => setShowReportModal(true)}
+              title="Reportar problema nesta questão"
+              className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
             >
-              {savedInNotebook ? (
-                <BookmarkCheck className="w-5 h-5 text-purple-600 fill-purple-600" />
-              ) : (
-                <Bookmark className="w-5 h-5 text-slate-400 hover:text-purple-600" />
-              )}
+              <Flag className="w-4 h-4" />
             </Button>
-          )}
+          </div>
         </div>
 
         <div className="prose prose-slate dark:prose-invert max-w-none">
@@ -227,6 +243,13 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
           <CommentSection questionId={question.id} canComment={isAnswered} />
         </CardFooter>
       )}
+
+      {/* Modal de report */}
+      <ReportModal
+        open={showReportModal}
+        onOpenChange={setShowReportModal}
+        question={question}
+      />
     </Card>
   );
 }

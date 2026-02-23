@@ -25,6 +25,7 @@ import userRoutes     from './routes/users.js';
 import tutorRoutes    from './routes/tutor.js';
 import webhookRoutes  from './routes/webhook.js';
 import rankingRoutes  from './routes/ranking.js';
+import reportRoutes   from './routes/reports.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -137,6 +138,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tutor', tutorRoutes);
 app.use('/api/ranking', rankingRoutes);
+app.use('/api/reports', reportRoutes);
 app.use('/api/webhook', webhookRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────────────────────────

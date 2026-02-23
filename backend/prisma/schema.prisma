@@ -35,11 +35,13 @@ model User {
   updated_at          DateTime @updatedAt
 
   // ── Relações ─────────────────────────────────────────────
-  questions     Question[]
-  attempts      Attempt[]
-  notebooks     Notebook[]
-  comments      Comment[]
-  subscriptions Subscription[]
+  questions        Question[]
+  attempts         Attempt[]
+  notebooks        Notebook[]
+  comments         Comment[]
+  subscriptions    Subscription[]
+  reports_sent     QuestionReport[] @relation("ReportedBy")
+  reports_resolved QuestionReport[] @relation("ResolvedBy")
 
   @@map("users")
 }
@@ -127,9 +129,10 @@ model Question {
   updated_at     DateTime @updatedAt
 
   creator  User?              @relation(fields: [created_by], references: [email], onDelete: SetNull)
-  attempts Attempt[]
+  attempts  Attempt[]
   notebooks NotebookQuestion[]
-  comments Comment[]
+  comments  Comment[]
+  reports   QuestionReport[]
 
   @@map("questions")
 }
@@ -181,6 +184,33 @@ model NotebookQuestion {
 
   @@id([notebook_id, question_id])
   @@map("notebook_questions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// QUESTION REPORT  ←  Alunos reportam questões possivelmente erradas
+// ─────────────────────────────────────────────────────────────
+model QuestionReport {
+  id          String    @id @default(uuid())
+  question_id String
+  user_id     String
+  reason      String    // Explicação do aluno sobre o problema
+  status      String    @default("pending")
+  // Valores: pending | reviewing | resolved | dismissed
+
+  admin_note  String?   // Observação do admin/professor ao resolver
+  resolved_by String?   // ID do admin/professor que resolveu
+  resolved_at DateTime? // Data da resolução
+
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  question    Question  @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  reporter    User      @relation("ReportedBy",  fields: [user_id],      references: [id], onDelete: Cascade)
+  resolver    User?     @relation("ResolvedBy",  fields: [resolved_by],  references: [id], onDelete: SetNull)
+
+  @@index([question_id])
+  @@index([status])
+  @@map("question_reports")
 }
 
 // ─────────────────────────────────────────────────────────────
