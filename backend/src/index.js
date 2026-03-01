@@ -31,6 +31,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// ─── TRUST PROXY ──────────────────────────────────────────────────────────────
+// Necessário no Render (e qualquer plataforma com reverse proxy como Heroku,
+// Railway, etc.). Sem isso, express-rate-limit lança ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+// pois recebe o header X-Forwarded-For sem que o Express esteja configurado para confiá-lo.
+app.set('trust proxy', 1);
+
 // ─── SEGURANÇA: Helmet ────────────────────────────────────────────────────────
 // Define cabeçalhos HTTP de segurança (XSS, Clickjacking, MIME sniffing, etc.)
 app.use(
@@ -70,21 +76,22 @@ app.use(
 );
 
 // ─── BODY PARSING ─────────────────────────────────────────────────────────────
-// Webhooks: captura o raw body ANTES do parse JSON para verificação de assinatura HMAC
-// (WooCommerce assina o payload bruto com HMAC-SHA256)
-app.use('/api/webhook', (req, _res, next) => {
-  let data = '';
-  req.on('data', (chunk) => { data += chunk; });
-  req.on('end', () => {
-    req.rawBody = data;
-    // Faz o parse manual para manter req.body disponível normalmente
-    try { req.body = JSON.parse(data); } catch { req.body = {}; }
-    next();
-  });
-});
-
-// Demais rotas: parse automático (limita payload para evitar ataques)
-app.use(express.json({ limit: '1mb' }));
+// Usa o callback `verify` do express.json() para capturar o raw body
+// nas rotas de webhook — sem consumir o stream duas vezes (evita o erro
+// "stream is not readable" que ocorria com o middleware manual anterior).
+//
+// O rawBody é necessário para verificar a assinatura HMAC-SHA256 do WooCommerce.
+app.use(
+  express.json({
+    limit: '1mb',
+    verify: (req, _res, buf, encoding) => {
+      // Salva o buffer bruto apenas para rotas de webhook (economiza memória)
+      if (req.originalUrl?.startsWith('/api/webhook')) {
+        req.rawBody = buf.toString(encoding || 'utf8');
+      }
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // ─── RATE LIMITING ────────────────────────────────────────────────────────────
