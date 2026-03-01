@@ -22,10 +22,19 @@ model User {
   full_name           String
   role                String   @default("user")         // "user" | "admin"
 
-  // ── Assinatura (cache para queries rápidas) ──────────────
+  // ── Assinatura — WooCommerce Subscriptions ───────────────
   subscription_type   String?  // "Aluno Clube do Pedrão" | "Aluno Clube dos Cascas" | "Professor"
   subscription_status String   @default("inactive")
   // Valores: active | pending-cancel | on-hold | cancelled | expired | pending | inactive
+  subscription_active Boolean  @default(false)
+  // Cache booleano: true = status em ACTIVE_STATUSES. Atualizado por syncUserSubscriptionCache.
+
+  // ── Membership — WooCommerce Memberships ─────────────────
+  membership_status     String?   // active | paused | cancelled | expired | delayed | complimentary | pending | free_trial
+  membership_active     Boolean   @default(false)
+  // true quando membership_status === "active"
+  membership_expires_at DateTime? // Data de expiração da associação (null = sem prazo)
+  membership_plan       String?   // Nome do plano (ex.: "Clube dos Cascas")
 
   first_login         Boolean  @default(true)  // true = precisa definir senha
   study_streak        Int      @default(0)

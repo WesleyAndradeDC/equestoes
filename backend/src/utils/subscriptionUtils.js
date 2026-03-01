@@ -104,7 +104,8 @@ export async function syncUserSubscriptionCache(prisma, userId) {
       where: { id: userId },
       data: {
         subscription_status: activeSubscription.status,
-        subscription_type: activeSubscription.subscription_type ?? undefined,
+        subscription_active: true, // ← cache booleano para acesso rápido no middleware
+        subscription_type:   activeSubscription.subscription_type ?? undefined,
       },
     });
     return activeSubscription;
@@ -120,6 +121,7 @@ export async function syncUserSubscriptionCache(prisma, userId) {
     where: { id: userId },
     data: {
       subscription_status: latestSubscription?.status ?? 'inactive',
+      subscription_active: false, // ← sem assinatura ativa
     },
   });
 

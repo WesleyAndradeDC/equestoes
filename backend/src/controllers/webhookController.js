@@ -286,6 +286,213 @@ export const woocommerceNewStudent = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// subscriptionWebhook
+//
+// Processa webhooks do WooCommerce Subscriptions (criada / atualizada / deletada).
+//
+// O que faz:
+//   • Extrai id, status e email do payload
+//   • Localiza o usuário pelo email (se não encontrado → 200 silencioso)
+//   • Atualiza user.subscription_status e user.subscription_active
+//   • Faz upsert na tabela subscriptions (mantém compatibilidade com o histórico)
+//
+// Configuração no WooCommerce:
+//   Tópico : Subscription created | Subscription updated | Subscription deleted
+//   URL    : POST /api/webhook/subscription
+//   Segredo: WOO_WEBHOOK_SECRET (opcional, mas recomendado)
+// ─────────────────────────────────────────────────────────────────────────────
+export const subscriptionWebhook = async (req, res) => {
+  try {
+    const payload = req.body;
+    const topic   = req.headers['x-wc-webhook-topic'] ?? 'subscription.unknown';
+
+    console.log('📋 Subscription Webhook recebido:', {
+      id:     payload.id,
+      status: payload.status,
+      topic,
+      email:  payload.billing?.email,
+    });
+
+    // Email obrigatório
+    const email = payload.billing?.email?.toLowerCase().trim();
+    if (!email) {
+      console.warn('⚠️ Subscription Webhook: email não encontrado no payload');
+      return res.status(200).json({ message: 'Webhook recebido — email ausente, ignorado' });
+    }
+
+    // Buscar usuário; se não existir, retornar 200 sem erro
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      console.log(`ℹ️ Subscription Webhook: usuário ${email} não encontrado — ignorando`);
+      return res.status(200).json({ message: 'Usuário não encontrado — webhook ignorado' });
+    }
+
+    // Normalizar status
+    const VALID_STATUSES = new Set([
+      'active', 'pending-cancel', 'on-hold', 'cancelled', 'expired', 'pending',
+    ]);
+    const status         = VALID_STATUSES.has(payload.status) ? payload.status : 'inactive';
+    const isActive       = ['active', 'pending-cancel'].includes(status);
+    const wooId          = payload.id ? String(payload.id) : null;
+
+    // Atualizar cache do usuário
+    await prisma.user.update({
+      where: { email },
+      data:  {
+        subscription_status: status,
+        subscription_active: isActive,
+      },
+    });
+
+    // Upsert na tabela subscriptions (mantém compatibilidade com o histórico)
+    if (wooId) {
+      await prisma.subscription.upsert({
+        where:  { woo_subscription_id: wooId },
+        update: { status, updated_at: new Date() },
+        create: {
+          user_id:             user.id,
+          woo_subscription_id: wooId,
+          status,
+          started_at:          new Date(),
+        },
+      });
+    }
+
+    console.log(`✅ Subscription Webhook: ${email} → status=${status} ativo=${isActive}`);
+
+    return res.status(200).json({
+      message:             'Subscription processada com sucesso',
+      email,
+      status,
+      subscription_active: isActive,
+    });
+
+  } catch (error) {
+    console.error('❌ Subscription Webhook error:', error);
+    if (error.code === 'P2002') {
+      return res.status(200).json({ message: 'Subscription já processada (idempotente)' });
+    }
+    res.status(500).json({ error: 'Erro ao processar subscription webhook' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// membershipWebhook
+//
+// Processa webhooks do WooCommerce Memberships (associação criada / atualizada / deletada).
+//
+// O que faz:
+//   • Extrai email, status, plan.name e end_date do payload
+//   • Localiza o usuário pelo email (se não encontrado → 200 silencioso)
+//   • Atualiza os campos membership_* no modelo User
+//   • Evento "deleted" → força membership_active = false
+//
+// Configuração no WooCommerce:
+//   Tópico : User Membership created | User Membership updated | User Membership deleted
+//   URL    : POST /api/webhook/membership
+//   Segredo: WOO_MEMBERSHIP_WEBHOOK_SECRET (opcional, mas recomendado)
+//
+// Campos atualizados no User:
+//   membership_status     → status bruto do WC Memberships
+//   membership_active     → true apenas quando status === "active"
+//   membership_expires_at → data de expiração (null = sem prazo)
+//   membership_plan       → nome do plano (ex.: "Clube dos Cascas")
+// ─────────────────────────────────────────────────────────────────────────────
+export const membershipWebhook = async (req, res) => {
+  try {
+    const payload = req.body;
+    const topic   = req.headers['x-wc-webhook-topic'] ?? '';
+
+    console.log('🎫 Membership Webhook recebido:', {
+      id:     payload.id,
+      status: payload.status,
+      topic,
+      plan:   payload.plan?.name,
+    });
+
+    // Extrair email — WC Memberships pode enviá-lo em diferentes campos
+    const rawEmail =
+      payload.member?.email ??
+      payload.user?.email   ??
+      payload.billing?.email;
+
+    const email = rawEmail?.toLowerCase().trim();
+
+    if (!email) {
+      console.warn('⚠️ Membership Webhook: email não encontrado no payload');
+      return res.status(200).json({ message: 'Webhook recebido — email ausente, ignorado' });
+    }
+
+    // Buscar usuário; se não existir, retornar 200 sem erro
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      console.log(`ℹ️ Membership Webhook: usuário ${email} não encontrado — ignorando`);
+      return res.status(200).json({ message: 'Usuário não encontrado — webhook ignorado' });
+    }
+
+    // ── Evento de exclusão / remoção da membership ────────────────────────
+    const isDeleted =
+      topic.toLowerCase().includes('deleted') ||
+      payload.status === 'deleted';
+
+    if (isDeleted) {
+      await prisma.user.update({
+        where: { email },
+        data:  {
+          membership_active: false,
+          membership_status: 'deleted',
+        },
+      });
+      console.log(`✅ Membership Webhook: membership removida para ${email}`);
+      return res.status(200).json({ message: 'Membership removida com sucesso', email });
+    }
+
+    // ── Evento de criação / atualização ───────────────────────────────────
+    const status   = payload.status ?? 'inactive';
+    const isActive = status === 'active';
+
+    // Extrair data de expiração (end_date pode vir em múltiplos formatos)
+    const rawEndDate = payload.end_date ?? payload.end_date_gmt ?? null;
+    const endDate    = rawEndDate ? new Date(rawEndDate) : null;
+    const validDate  = endDate && !isNaN(endDate.getTime()) ? endDate : null;
+
+    // Nome do plano
+    const planName = payload.plan?.name ?? null;
+
+    // Atualizar campos de membership no usuário
+    await prisma.user.update({
+      where: { email },
+      data:  {
+        membership_status:     status,
+        membership_active:     isActive,
+        membership_expires_at: validDate,
+        ...(planName && { membership_plan: planName }),
+      },
+    });
+
+    console.log(
+      `✅ Membership Webhook: ${email} → status=${status} ativo=${isActive} plano="${planName}"`,
+    );
+
+    return res.status(200).json({
+      message:              'Membership processada com sucesso',
+      email,
+      status,
+      membership_active:    isActive,
+      membership_plan:      planName,
+      membership_expires_at: validDate?.toISOString() ?? null,
+    });
+
+  } catch (error) {
+    console.error('❌ Membership Webhook error:', error);
+    res.status(500).json({ error: 'Erro ao processar membership webhook' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// testWebhook
+// ─────────────────────────────────────────────────────────────────────────────
 // Webhook de teste
 export const testWebhook = async (req, res) => {
   res.json({
