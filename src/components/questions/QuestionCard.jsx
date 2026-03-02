@@ -171,9 +171,10 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
         </div>
 
         <div className="prose prose-slate dark:prose-invert max-w-none">
-          <p className="text-base leading-relaxed text-slate-700 dark:text-slate-200 whitespace-pre-wrap">
-            {question.text}
-          </p>
+          <p
+            className="text-base leading-relaxed text-slate-700 dark:text-slate-200"
+            dangerouslySetInnerHTML={{ __html: question.text }}
+          />
         </div>
       </CardHeader>
 
@@ -189,7 +190,10 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
           >
             <div className="flex items-start gap-3">
               <span className="font-bold text-purple-700 dark:text-purple-400 shrink-0">{option.letter})</span>
-              <span className="text-slate-700 dark:text-slate-200 flex-1">{option.text}</span>
+              <span
+                className="text-slate-700 dark:text-slate-200 flex-1"
+                dangerouslySetInnerHTML={{ __html: option.text }}
+              />
               {isAnswered && option.letter === question.correct_answer && (
                 <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
               )}
@@ -219,9 +223,10 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
             <Lightbulb className="w-5 h-5" />
             <h4 className="font-semibold">Comentário do Professor</h4>
           </div>
-          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-            {question.explanation}
-          </p>
+          <p
+            className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: question.explanation }}
+          />
         </CardFooter>
       )}
 
