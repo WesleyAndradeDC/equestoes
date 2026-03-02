@@ -379,6 +379,18 @@ export const subscriptionWebhook = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// _planNameToSubscriptionType
+// Converte o nome do plano WC Memberships para o subscription_type interno.
+// ─────────────────────────────────────────────────────────────────────────────
+function _planNameToSubscriptionType(planName) {
+  if (!planName) return 'Aluno Clube do Pedrão';
+  const lower = planName.toLowerCase();
+  if (lower.includes('cascas'))                          return 'Aluno Clube dos Cascas';
+  if (lower.includes('pedrão') || lower.includes('pedrao')) return 'Aluno Clube do Pedrão';
+  return 'Aluno Clube do Pedrão'; // padrão
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // membershipWebhook
 //
 // Processa webhooks do WooCommerce Memberships (associação criada / atualizada / deletada).
@@ -443,41 +455,82 @@ export const membershipWebhook = async (req, res) => {
       }
     }
 
-    // ── Fallback: WooCommerce REST API (se tiver credenciais configuradas) ──
-    // Precisa de WOO_SITE_URL, WOO_CONSUMER_KEY e WOO_CONSUMER_SECRET no .env
-    if (!user && payload?.customer_id &&
-        process.env.WOO_CONSUMER_KEY && process.env.WOO_CONSUMER_SECRET) {
-      try {
-        const site    = (process.env.WOO_SITE_URL ?? 'https://gramatiquecursos.com').replace(/\/$/, '');
-        const apiUrl  = `${site}/wp-json/wc/v3/customers/${payload.customer_id}`;
-        const auth    = Buffer.from(
-          `${process.env.WOO_CONSUMER_KEY}:${process.env.WOO_CONSUMER_SECRET}`
-        ).toString('base64');
+    // ── Fallback: WooCommerce REST API ────────────────────────────────────
+    // Ativado quando o usuário não é encontrado pelo order_id.
+    // Usa WC REST API para buscar email + nome pelo customer_id.
+    // Se o usuário não existir no banco → CRIA automaticamente.
+    //
+    // Requer no .env do Render:
+    //   WOO_SITE_URL        = https://gramatiquecursos.com
+    //   WOO_CONSUMER_KEY    = ck_xxxxxxxxxxxxxxxx
+    //   WOO_CONSUMER_SECRET = cs_xxxxxxxxxxxxxxxx
+    if (!user && payload?.customer_id) {
+      if (process.env.WOO_CONSUMER_KEY && process.env.WOO_CONSUMER_SECRET) {
+        try {
+          const site   = (process.env.WOO_SITE_URL ?? 'https://gramatiquecursos.com').replace(/\/$/, '');
+          const apiUrl = `${site}/wp-json/wc/v3/customers/${payload.customer_id}`;
+          const auth   = Buffer.from(
+            `${process.env.WOO_CONSUMER_KEY}:${process.env.WOO_CONSUMER_SECRET}`
+          ).toString('base64');
 
-        const response = await fetch(apiUrl, {
-          headers: { Authorization: `Basic ${auth}` },
-        });
+          console.log(`🔍 Consultando WC API para customer_id=${payload.customer_id}...`);
 
-        if (response.ok) {
-          const customer = await response.json();
-          const custEmail = customer.email?.toLowerCase().trim();
-          if (custEmail) {
-            user = await prisma.user.findUnique({ where: { email: custEmail } });
-            if (user) {
-              console.log(`✅ Usuário encontrado via WC API (customer_id: ${payload.customer_id}): ${user.email}`);
+          const response = await fetch(apiUrl, {
+            headers: { Authorization: `Basic ${auth}` },
+            signal:  AbortSignal.timeout(8000), // timeout de 8s
+          });
+
+          if (response.ok) {
+            const customer      = await response.json();
+            const custEmail     = customer.email?.toLowerCase().trim();
+            const custFirstName = customer.first_name ?? '';
+            const custLastName  = customer.last_name  ?? '';
+            const custFullName  = `${custFirstName} ${custLastName}`.trim();
+
+            if (custEmail) {
+              // 1. Tentar encontrar usuário já existente
+              user = await prisma.user.findUnique({ where: { email: custEmail } });
+
+              if (user) {
+                console.log(`✅ Usuário encontrado via WC API: ${custEmail}`);
+
+              } else if (custFullName) {
+                // 2. Criar automaticamente — o membership chegou antes do order.completed
+                const subscriptionType = _planNameToSubscriptionType(payload.plan_name);
+                user = await prisma.user.create({
+                  data: {
+                    email:               custEmail,
+                    full_name:           custFullName,
+                    subscription_type:   subscriptionType,
+                    subscription_status: 'pending', // será atualizado após processar membership
+                    role:                'user',
+                    first_login:         true,
+                    password_hash:       null,
+                  },
+                });
+                console.log(`✅ Usuário CRIADO via WC API (chegou antes do order.completed): ${custEmail}`);
+              } else {
+                console.warn(`⚠️ WC API: email ${custEmail} encontrado mas sem nome — não é possível criar usuário`);
+              }
             }
+          } else {
+            console.warn(`⚠️ WC API respondeu ${response.status} para customer_id=${payload.customer_id}`);
           }
+        } catch (apiError) {
+          console.warn('⚠️ Falha ao consultar WooCommerce API:', apiError.message);
         }
-      } catch (apiError) {
-        console.warn('⚠️ Falha ao consultar WooCommerce API:', apiError.message);
+      } else {
+        console.warn(
+          '⚠️ WOO_CONSUMER_KEY / WOO_CONSUMER_SECRET não configurados no .env — fallback WC API desabilitado.',
+        );
       }
     }
 
     if (!user) {
       console.warn(
-        `⚠️ Membership Webhook: usuário não encontrado — order_id=${orderId}, customer_id=${payload?.customer_id}`,
+        `⚠️ Membership Webhook: usuário não encontrado e não foi possível criar — ` +
+        `order_id=${orderId}, customer_id=${payload?.customer_id}`,
       );
-      console.warn('💡 Dica: garanta que o order webhook seja processado ANTES do membership webhook.');
       return res.status(200).json({ message: 'Usuário não encontrado — webhook ignorado' });
     }
 
