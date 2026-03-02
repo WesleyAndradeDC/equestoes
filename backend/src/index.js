@@ -94,14 +94,30 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+// ─── DEBUG: Logger raw para webhooks ─────────────────────────────────────────
+// Captura TODA requisição para /api/webhook antes de qualquer middleware,
+// incluindo rate limiter e body parser. Essencial para diagnóstico.
+app.use('/api/webhook', (req, res, next) => {
+  console.log(`\n🌐 [WEBHOOK-ENTRY] ${new Date().toISOString()}`);
+  console.log(`   Method : ${req.method}`);
+  console.log(`   URL    : ${req.originalUrl}`);
+  console.log(`   IP     : ${req.ip}`);
+  console.log(`   Topic  : ${req.headers['x-wc-webhook-topic'] ?? '(sem topic)'}`);
+  console.log(`   Source : ${req.headers['x-wc-webhook-source'] ?? '(sem source)'}`);
+  console.log(`   CT     : ${req.headers['content-type'] ?? '(sem content-type)'}`);
+  next();
+});
+
 // ─── RATE LIMITING ────────────────────────────────────────────────────────────
 // Rate limit global: 100 req/15min por IP
+// Webhooks do WooCommerce ficam ISENTOS para não bloquear eventos críticos.
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Muitas requisições. Tente novamente em alguns minutos.' },
+  skip: (req) => req.originalUrl.startsWith('/api/webhook'), // ← isenta webhooks
 });
 
 // Rate limit agressivo para autenticação: 10 tentativas/15min por IP

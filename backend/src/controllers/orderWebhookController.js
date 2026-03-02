@@ -50,6 +50,12 @@ function verifyWooSignature(rawBody, signature, secret) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const handleOrderWebhook = async (req, res) => {
+  // 🔍 LOG IMEDIATO — capturado antes de qualquer validação
+  console.log('📦 [ORDER-HANDLER] Handler chamado!');
+  console.log('📦 [ORDER-HANDLER] rawBody existe?', !!req.rawBody);
+  console.log('📦 [ORDER-HANDLER] body existe?', !!req.body);
+  console.log('📦 [ORDER-HANDLER] body keys:', Object.keys(req.body ?? {}));
+
   try {
     // ── Verificação de assinatura ──────────────────────────────────────────
     const wooSecret  = process.env.WOO_WEBHOOK_SECRET;
@@ -57,8 +63,12 @@ export const handleOrderWebhook = async (req, res) => {
     const rawBody    = req.rawBody ?? JSON.stringify(req.body);
     const topic      = req.headers['x-wc-webhook-topic'] ?? 'order.unknown';
 
+    console.log('📦 [ORDER-HANDLER] topic:', topic);
+    console.log('📦 [ORDER-HANDLER] WOO_WEBHOOK_SECRET definido?', !!wooSecret);
+    console.log('📦 [ORDER-HANDLER] signature header presente?', !!signature);
+
     if (wooSecret && !verifyWooSignature(rawBody, signature, wooSecret)) {
-      console.warn('⚠️ Order Webhook: assinatura inválida');
+      console.warn('⚠️ Order Webhook: assinatura inválida — verifique WOO_WEBHOOK_SECRET no Render');
       return res.status(401).json({ error: 'Assinatura inválida' });
     }
 
