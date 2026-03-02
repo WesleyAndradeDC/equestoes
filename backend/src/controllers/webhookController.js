@@ -401,26 +401,49 @@ export const subscriptionWebhook = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const membershipWebhook = async (req, res) => {
   try {
+    // ── DEBUG: log completo para identificar estrutura real do payload ──────
+    console.log('🔍 [DEBUG] Membership Webhook — Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('🔍 [DEBUG] Membership Webhook — Body completo:', JSON.stringify(req.body, null, 2));
+    console.log('🔍 [DEBUG] Membership Webhook — typeof body:', typeof req.body);
+    console.log('🔍 [DEBUG] Membership Webhook — body keys:', Object.keys(req.body || {}));
+    console.log('🔍 [DEBUG] Membership Webhook — rawBody existe?', !!req.rawBody);
+    if (req.rawBody) {
+      console.log('🔍 [DEBUG] Membership Webhook — rawBody (500 chars):', req.rawBody.substring(0, 500));
+    }
+
     const payload = req.body;
     const topic   = req.headers['x-wc-webhook-topic'] ?? '';
 
     console.log('🎫 Membership Webhook recebido:', {
-      id:     payload.id,
-      status: payload.status,
+      id:           payload?.id,
+      status:       payload?.status,
       topic,
-      plan:   payload.plan?.name,
+      plan:         payload?.plan?.name,
+      has_member:   !!payload?.member,
+      has_user:     !!payload?.user,
+      has_billing:  !!payload?.billing,
+      has_customer: !!payload?.customer,
+      payload_keys: Object.keys(payload || {}),
     });
 
     // Extrair email — WC Memberships pode enviá-lo em diferentes campos
     const rawEmail =
-      payload.member?.email ??
-      payload.user?.email   ??
-      payload.billing?.email;
+      payload?.member?.email   ??
+      payload?.user?.email     ??
+      payload?.billing?.email  ??
+      payload?.customer?.email;
 
     const email = rawEmail?.toLowerCase().trim();
 
     if (!email) {
       console.warn('⚠️ Membership Webhook: email não encontrado no payload');
+      console.warn('⚠️ [DEBUG] Campos disponíveis para email:', {
+        member:   payload?.member,
+        user:     payload?.user,
+        billing:  payload?.billing,
+        customer: payload?.customer,
+        all_keys: Object.keys(payload || {}),
+      });
       return res.status(200).json({ message: 'Webhook recebido — email ausente, ignorado' });
     }
 
