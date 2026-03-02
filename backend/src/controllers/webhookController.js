@@ -1,12 +1,13 @@
 import prisma from '../config/database.js';
 import { syncUserSubscriptionCache } from '../utils/subscriptionUtils.js';
 
-// Mapeamento de product_ids para tipos de assinatura
+// Mapeamento de product_ids para tipos de assinatura.
+// IMPORTANTE: cada ID deve aparecer em apenas UM plano.
 const PRODUCT_MAPPING = {
   // Aluno Clube do Pedrão
-  'Aluno Clube do Pedrão': [35416, 35418, 35413],
+  'Aluno Clube do Pedrão': [35416, 35418, 35413, 47507, 47485],
   // Aluno Clube dos Cascas
-  'Aluno Clube dos Cascas': [45748, 4252, 19479, 28240, 28239, 35416, 35418, 35413, 28237, 20198, 19278]
+  'Aluno Clube dos Cascas': [19479, 4252, 28237, 28239, 28240, 45748],
 };
 
 /**
