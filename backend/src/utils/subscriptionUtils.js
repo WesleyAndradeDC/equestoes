@@ -5,11 +5,13 @@
  */
 
 // ─── Mapeamento de produto → tipo de assinatura ────────────────────────────
+// IDs exclusivos de cada plano — NÃO devem se sobrepor.
+// Pedrão : produtos do plano básico
+// Cascas : produtos do plano completo (IDs próprios, sem repetir os do Pedrão)
 export const PRODUCT_MAPPING = {
   'Aluno Clube do Pedrão': [35416, 35418, 35413],
   'Aluno Clube dos Cascas': [
-    45748, 4252, 19479, 28240, 28239,
-    35416, 35418, 35413, 28237, 20198, 19278,
+    45748, 4252, 19479, 28240, 28239, 28237, 20198, 19278,
   ],
 };
 
