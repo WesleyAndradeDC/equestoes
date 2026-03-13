@@ -4,10 +4,12 @@ import { syncUserSubscriptionCache } from '../utils/subscriptionUtils.js';
 // Mapeamento de product_ids para tipos de assinatura.
 // IMPORTANTE: cada ID deve aparecer em apenas UM plano.
 const PRODUCT_MAPPING = {
-  // Aluno Clube do Pedrão
-  'Aluno Clube do Pedrão': [35416, 35418, 35413, 47507, 47485],
-  // Aluno Clube dos Cascas
-  'Aluno Clube dos Cascas': [19479, 4252, 28237, 28239, 28240, 45748],
+  // Clube do Pedrão — acesso restrito a Língua Portuguesa
+  'Aluno Clube do Pedrão':  [35416, 35418, 35413, 47507, 47485],
+  // Clube dos Cascas — acesso completo (inclui PRF 2026: 47818)
+  'Aluno Clube dos Cascas': [19479, 4252, 28237, 28239, 28240, 45748, 47818],
+  // Banco do Brasil — acesso completo igual ao Cascas
+  'Aluno Banco do Brasil':  [47825],
 };
 
 /**
@@ -22,8 +24,8 @@ function identifySubscriptionType(lineItems) {
 
   // Extrair todos os product_ids do pedido
   const productIds = lineItems
-    .map(item => item.product_id)
-    .filter(id => id != null);
+    .map(item => Number(item.product_id))
+    .filter(id => !isNaN(id) && id > 0);
 
   if (productIds.length === 0) {
     return null;
@@ -31,21 +33,22 @@ function identifySubscriptionType(lineItems) {
 
   console.log('🔍 Product IDs encontrados:', productIds);
 
-  // Verificar se algum produto pertence ao "Aluno Clube dos Cascas"
-  // (tem mais produtos, então verificar primeiro)
-  const cascasProducts = PRODUCT_MAPPING['Aluno Clube dos Cascas'];
-  const hasCascasProduct = productIds.some(id => cascasProducts.includes(id));
+  // Prioridade: Cascas > BB > Pedrão (do acesso mais amplo para o mais restrito)
 
-  if (hasCascasProduct) {
+  // 1. Clube dos Cascas — acesso total (inclui PRF 2026: 47818)
+  if (productIds.some(id => PRODUCT_MAPPING['Aluno Clube dos Cascas'].includes(id))) {
     console.log('✅ Tipo identificado: Aluno Clube dos Cascas');
     return 'Aluno Clube dos Cascas';
   }
 
-  // Verificar se algum produto pertence ao "Aluno Clube do Pedrão"
-  const pedraoProducts = PRODUCT_MAPPING['Aluno Clube do Pedrão'];
-  const hasPedraoProduct = productIds.some(id => pedraoProducts.includes(id));
+  // 2. Banco do Brasil — acesso total igual ao Cascas (47825)
+  if (productIds.some(id => PRODUCT_MAPPING['Aluno Banco do Brasil'].includes(id))) {
+    console.log('✅ Tipo identificado: Aluno Banco do Brasil');
+    return 'Aluno Banco do Brasil';
+  }
 
-  if (hasPedraoProduct) {
+  // 3. Clube do Pedrão — acesso restrito a Língua Portuguesa
+  if (productIds.some(id => PRODUCT_MAPPING['Aluno Clube do Pedrão'].includes(id))) {
     console.log('✅ Tipo identificado: Aluno Clube do Pedrão');
     return 'Aluno Clube do Pedrão';
   }
@@ -386,9 +389,11 @@ export const subscriptionWebhook = async (req, res) => {
 function _planNameToSubscriptionType(planName) {
   if (!planName) return 'Aluno Clube do Pedrão';
   const lower = planName.toLowerCase();
-  if (lower.includes('cascas'))                          return 'Aluno Clube dos Cascas';
-  if (lower.includes('pedrão') || lower.includes('pedrao')) return 'Aluno Clube do Pedrão';
-  return 'Aluno Clube do Pedrão'; // padrão
+  if (lower.includes('cascas'))                              return 'Aluno Clube dos Cascas';
+  if (lower.includes('banco do brasil') || lower.includes('bb')) return 'Aluno Banco do Brasil';
+  if (lower.includes('prf'))                                 return 'Aluno Clube dos Cascas'; // PRF acessa como Cascas
+  if (lower.includes('pedrão') || lower.includes('pedrao'))  return 'Aluno Clube do Pedrão';
+  return 'Aluno Clube do Pedrão'; // padrão seguro
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

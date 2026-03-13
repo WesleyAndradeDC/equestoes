@@ -8,8 +8,13 @@
 // IDs exclusivos de cada plano — NÃO devem se sobrepor.
 // Cada product_id deve pertencer a apenas um plano.
 export const PRODUCT_MAPPING = {
-  'Aluno Clube do Pedrão': [35416, 35418, 35413, 47507, 47485],
-  'Aluno Clube dos Cascas': [19479, 4252, 28237, 28239, 28240, 45748],
+  // Clube do Pedrão — acesso restrito a Língua Portuguesa
+  'Aluno Clube do Pedrão':    [35416, 35418, 35413, 47507, 47485],
+  // Clube dos Cascas — acesso completo a todas as disciplinas
+  // Inclui PRF 2026 (47818) que concede o mesmo acesso do Cascas
+  'Aluno Clube dos Cascas':   [19479, 4252, 28237, 28239, 28240, 45748, 47818],
+  // Banco do Brasil — acesso completo igual ao Cascas (produto específico BB)
+  'Aluno Banco do Brasil':    [47825],
 };
 
 // ─── Status que concedem acesso à plataforma ──────────────────────────────
@@ -31,7 +36,7 @@ export const WOO_STATUS_MAP = {
 
 /**
  * Identifica o tipo de assinatura baseado nos product_ids dos line_items.
- * Prioridade: Cascas > Pedrão (Cascas é o plano mais completo)
+ * Prioridade: Cascas > BB > Pedrão (do acesso mais amplo para o mais restrito)
  */
 export function identifySubscriptionType(lineItems) {
   if (!Array.isArray(lineItems) || lineItems.length === 0) return null;
@@ -42,9 +47,15 @@ export function identifySubscriptionType(lineItems) {
 
   if (ids.length === 0) return null;
 
+  // Clube dos Cascas — acesso total (inclui PRF 2026)
   if (ids.some((id) => PRODUCT_MAPPING['Aluno Clube dos Cascas'].includes(id))) {
     return 'Aluno Clube dos Cascas';
   }
+  // Banco do Brasil — acesso total igual ao Cascas
+  if (ids.some((id) => PRODUCT_MAPPING['Aluno Banco do Brasil'].includes(id))) {
+    return 'Aluno Banco do Brasil';
+  }
+  // Clube do Pedrão — acesso restrito a Língua Portuguesa
   if (ids.some((id) => PRODUCT_MAPPING['Aluno Clube do Pedrão'].includes(id))) {
     return 'Aluno Clube do Pedrão';
   }
