@@ -67,8 +67,18 @@ export const createQuestion = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!text || !discipline || !difficulty || !option_a || !option_b || !option_c || !option_d || !option_e || !correct_answer || !explanation) {
+    // Questões "Certo ou Errado" exigem apenas A e B; as demais exigem A-E
+    const isCertoErrado = question_type === 'Certo ou Errado';
+    const missingBase = !text || !discipline || !difficulty || !option_a || !option_b || !correct_answer || !explanation;
+    const missingMultiple = !isCertoErrado && (!option_c || !option_d || !option_e);
+
+    if (missingBase || missingMultiple) {
       return res.status(400).json({ error: 'Campos obrigatórios faltando' });
+    }
+
+    // Para "Certo ou Errado": gabarito só pode ser A ou B
+    if (isCertoErrado && !['A', 'B'].includes(correct_answer)) {
+      return res.status(400).json({ error: 'Para questões Certo ou Errado, o gabarito deve ser A ou B' });
     }
 
     // Generate code if not provided
@@ -90,12 +100,13 @@ export const createQuestion = async (req, res) => {
         position,
         option_a,
         option_b,
-        option_c,
-        option_d,
-        option_e,
+        // Questões "Certo ou Errado" não possuem C/D/E
+        option_c: isCertoErrado ? null : option_c,
+        option_d: isCertoErrado ? null : option_d,
+        option_e: isCertoErrado ? null : option_e,
         correct_answer,
         explanation,
-        question_type,
+        question_type: question_type || 'Múltipla Escolha',
         subjects: subjects || [],
         created_by: req.user.email
       }

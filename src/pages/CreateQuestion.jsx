@@ -39,6 +39,7 @@ export default function CreateQuestion() {
     exam_board: '',
     year: '',
     position: '',
+    question_type: 'Múltipla Escolha',
     option_a: '',
     option_b: '',
     option_c: '',
@@ -47,6 +48,8 @@ export default function CreateQuestion() {
     correct_answer: 'A',
     explanation: ''
   });
+
+  const isCertoErrado = formData.question_type === 'Certo ou Errado';
 
   const queryClient = useQueryClient();
 
@@ -74,6 +77,7 @@ export default function CreateQuestion() {
         exam_board: '',
         year: '',
         position: '',
+        question_type: 'Múltipla Escolha',
         option_a: '',
         option_b: '',
         option_c: '',
@@ -91,20 +95,50 @@ export default function CreateQuestion() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!formData.text || !formData.discipline || !formData.option_a || !formData.option_b ||
-    !formData.option_c || !formData.option_d || !formData.option_e || !formData.explanation) {
+    const certoErrado = formData.question_type === 'Certo ou Errado';
+    const baseOk = formData.text && formData.discipline && formData.option_a && formData.option_b && formData.explanation;
+    const multipleOk = certoErrado || (formData.option_c && formData.option_d && formData.option_e);
+
+    if (!baseOk || !multipleOk) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
     createQuestionMutation.mutate({
       ...formData,
+      // Para Certo/Errado, garantir que as opções extras ficam vazias
+      option_c: certoErrado ? undefined : formData.option_c,
+      option_d: certoErrado ? undefined : formData.option_d,
+      option_e: certoErrado ? undefined : formData.option_e,
       year: formData.year ? Number(formData.year) : undefined
     });
   };
 
   const handleChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Ao trocar o tipo de questão, adaptar campos automaticamente
+  const handleTypeChange = (value) => {
+    if (value === 'Certo ou Errado') {
+      setFormData(prev => ({
+        ...prev,
+        question_type: 'Certo ou Errado',
+        option_a: 'Certo',
+        option_b: 'Errado',
+        option_c: '',
+        option_d: '',
+        option_e: '',
+        correct_answer: 'A', // A = Certo
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        question_type: value,
+        option_a: prev.option_a === 'Certo' ? '' : prev.option_a,
+        option_b: prev.option_b === 'Errado' ? '' : prev.option_b,
+      }));
+    }
   };
 
   if (!user) return null;
@@ -203,36 +237,78 @@ export default function CreateQuestion() {
               </div>
             </div>
 
+            {/* Question Type */}
+            <div className="space-y-2">
+              <Label>Tipo de Questão *</Label>
+              <Select value={formData.question_type} onValueChange={handleTypeChange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Múltipla Escolha">Múltipla Escolha</SelectItem>
+                  <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Options */}
             <div className="space-y-4">
               <Label>Alternativas *</Label>
-              {['a', 'b', 'c', 'd', 'e'].map((letter) =>
-              <div key={letter} className="flex gap-2 items-center">
-                  <span className="font-bold text-purple-700 dark:text-white w-8">{letter.toUpperCase()})</span>
-                  <Input
-                  value={formData[`option_${letter}`]}
-                  onChange={(e) => handleChange(`option_${letter}`, e.target.value)}
-                  placeholder={`Digite a alternativa ${letter.toUpperCase()}`} />
 
+              {isCertoErrado ? (
+                /* Certo ou Errado: apenas A e B, fixados, somente leitura */
+                <div className="flex gap-4">
+                  <div className="flex-1 flex items-center gap-2 p-3 rounded-lg border-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                    <span className="font-bold text-green-700 dark:text-green-400 w-8">A)</span>
+                    <span className="text-green-700 dark:text-green-300 font-medium">Certo</span>
+                  </div>
+                  <div className="flex-1 flex items-center gap-2 p-3 rounded-lg border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+                    <span className="font-bold text-red-700 dark:text-red-400 w-8">B)</span>
+                    <span className="text-red-700 dark:text-red-300 font-medium">Errado</span>
+                  </div>
                 </div>
+              ) : (
+                /* Múltipla Escolha: A até E */
+                ['a', 'b', 'c', 'd', 'e'].map((letter) => (
+                  <div key={letter} className="flex gap-2 items-center">
+                    <span className="font-bold text-purple-700 dark:text-white w-8">{letter.toUpperCase()})</span>
+                    <Input
+                      value={formData[`option_${letter}`]}
+                      onChange={(e) => handleChange(`option_${letter}`, e.target.value)}
+                      placeholder={`Digite a alternativa ${letter.toUpperCase()}`}
+                    />
+                  </div>
+                ))
               )}
             </div>
 
             {/* Correct Answer */}
             <div className="space-y-2">
               <Label>Gabarito *</Label>
-              <Select value={formData.correct_answer} onValueChange={(value) => handleChange('correct_answer', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="A">A</SelectItem>
-                  <SelectItem value="B">B</SelectItem>
-                  <SelectItem value="C">C</SelectItem>
-                  <SelectItem value="D">D</SelectItem>
-                  <SelectItem value="E">E</SelectItem>
-                </SelectContent>
-              </Select>
+              {isCertoErrado ? (
+                <Select value={formData.correct_answer} onValueChange={(value) => handleChange('correct_answer', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A">A — Certo</SelectItem>
+                    <SelectItem value="B">B — Errado</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Select value={formData.correct_answer} onValueChange={(value) => handleChange('correct_answer', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A">A</SelectItem>
+                    <SelectItem value="B">B</SelectItem>
+                    <SelectItem value="C">C</SelectItem>
+                    <SelectItem value="D">D</SelectItem>
+                    <SelectItem value="E">E</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Explanation */}

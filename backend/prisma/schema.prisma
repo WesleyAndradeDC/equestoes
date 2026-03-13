@@ -126,9 +126,9 @@ model Question {
   position       String?
   option_a       String
   option_b       String
-  option_c       String
-  option_d       String
-  option_e       String
+  option_c       String?  // null para questões "Certo ou Errado"
+  option_d       String?  // null para questões "Certo ou Errado"
+  option_e       String?  // null para questões "Certo ou Errado"
   correct_answer String   // "A" | "B" | "C" | "D" | "E"
   explanation    String
   question_type  String?

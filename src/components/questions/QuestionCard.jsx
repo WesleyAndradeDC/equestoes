@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bookmark, BookmarkCheck, CheckCircle2, XCircle, Lightbulb, MessageCircle, ChevronDown, ChevronUp, Flag } from 'lucide-react';
+import { Bookmark, BookmarkCheck, CheckCircle2, XCircle, Lightbulb, MessageCircle, ChevronDown, ChevronUp, Flag, Check, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import CommentSection from './CommentSection';
@@ -83,13 +83,18 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
     setShowReportModal(false);
   }, [question.id]);
 
-  const options = [
-    { letter: 'A', text: question.option_a },
-    { letter: 'B', text: question.option_b },
-    { letter: 'C', text: question.option_c },
-    { letter: 'D', text: question.option_d },
-    { letter: 'E', text: question.option_e },
-  ];
+  const isCertoErrado = question.question_type === 'Certo ou Errado';
+
+  // Para múltipla escolha, filtra opções que têm texto (null-safe para Certo ou Errado)
+  const options = isCertoErrado
+    ? [] // tratado separadamente no layout
+    : [
+        { letter: 'A', text: question.option_a },
+        { letter: 'B', text: question.option_b },
+        { letter: 'C', text: question.option_c },
+        { letter: 'D', text: question.option_d },
+        { letter: 'E', text: question.option_e },
+      ].filter(opt => opt.text);
 
   const difficultyColors = {
     'Fácil': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700',
@@ -146,6 +151,37 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
     }
 
     return 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 opacity-60';
+  };
+
+  // ── Estilos para os botões Certo/Errado ─────────────────────────────────
+  const getCertoErradoStyle = (letter) => {
+    const base = 'flex-1 flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 font-semibold text-base transition-all';
+
+    if (!isAnswered) {
+      if (selectedAnswer === letter) {
+        return letter === 'A'
+          ? `${base} border-green-500 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 shadow-md scale-[1.02]`
+          : `${base} border-red-500 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 shadow-md scale-[1.02]`;
+      }
+      return letter === 'A'
+        ? `${base} border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 hover:scale-[1.01] cursor-pointer`
+        : `${base} border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-[1.01] cursor-pointer`;
+    }
+
+    // Após responder
+    if (letter === question.correct_answer) {
+      return letter === 'A'
+        ? `${base} border-green-500 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300`
+        : `${base} border-red-500 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300`;
+    }
+    if (letter === selectedAnswer) {
+      return letter === 'A'
+        ? `${base} border-green-300 bg-green-50/60 dark:bg-green-900/20 text-green-600/60 dark:text-green-400/60 opacity-60`
+        : `${base} border-red-300 bg-red-50/60 dark:bg-red-900/20 text-red-600/60 dark:text-red-400/60 opacity-60`;
+    }
+    return letter === 'A'
+      ? `${base} border-green-200 dark:border-green-800 text-green-500/50 dark:text-green-400/50 opacity-50`
+      : `${base} border-red-200 dark:border-red-800 text-red-500/50 dark:text-red-400/50 opacity-50`;
   };
 
   return (
@@ -229,32 +265,86 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
-        {options.map((option) => (
-          <button
-            key={option.letter}
-            onClick={() => !isAnswered && setSelectedAnswer(option.letter)}
-            disabled={isAnswered}
-            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${getOptionStyle(option.letter)} ${
-              !isAnswered ? 'cursor-pointer' : 'cursor-default'
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <span className="font-bold text-purple-700 dark:text-purple-400 shrink-0">{option.letter})</span>
-              <span
-                className="text-slate-700 dark:text-slate-200 flex-1"
-                dangerouslySetInnerHTML={{ __html: option.text }}
-              />
-              {isAnswered && option.letter === question.correct_answer && (
-                <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+      {/* ── Layout: Certo ou Errado ──────────────────────────────────── */}
+      {isCertoErrado ? (
+        <CardContent>
+          <div className="flex gap-4">
+            {/* Botão CERTO (A) */}
+            <button
+              onClick={() => !isAnswered && setSelectedAnswer('A')}
+              disabled={isAnswered}
+              className={getCertoErradoStyle('A')}
+            >
+              <Check className="w-7 h-7" strokeWidth={2.5} />
+              <span className="text-lg tracking-wide">CERTO</span>
+              {isAnswered && 'A' === question.correct_answer && (
+                <span className="text-xs font-normal opacity-80">✓ Resposta correta</span>
               )}
-              {isAnswered && option.letter === selectedAnswer && option.letter !== question.correct_answer && (
-                <XCircle className="w-5 h-5 text-red-600 shrink-0" />
+              {isAnswered && selectedAnswer === 'A' && 'A' !== question.correct_answer && (
+                <span className="text-xs font-normal opacity-80">✗ Sua resposta</span>
               )}
+            </button>
+
+            {/* Botão ERRADO (B) */}
+            <button
+              onClick={() => !isAnswered && setSelectedAnswer('B')}
+              disabled={isAnswered}
+              className={getCertoErradoStyle('B')}
+            >
+              <X className="w-7 h-7" strokeWidth={2.5} />
+              <span className="text-lg tracking-wide">ERRADO</span>
+              {isAnswered && 'B' === question.correct_answer && (
+                <span className="text-xs font-normal opacity-80">✓ Resposta correta</span>
+              )}
+              {isAnswered && selectedAnswer === 'B' && 'B' !== question.correct_answer && (
+                <span className="text-xs font-normal opacity-80">✗ Sua resposta</span>
+              )}
+            </button>
+          </div>
+
+          {/* Resultado visual após responder */}
+          {isAnswered && (
+            <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg text-sm font-medium ${
+              selectedAnswer === question.correct_answer
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+            }`}>
+              {selectedAnswer === question.correct_answer
+                ? <><CheckCircle2 className="w-4 h-4 shrink-0" /> Você acertou! A afirmativa está {question.correct_answer === 'A' ? 'CERTA' : 'ERRADA'}.</>
+                : <><XCircle className="w-4 h-4 shrink-0" /> Você errou. A afirmativa está {question.correct_answer === 'A' ? 'CERTA' : 'ERRADA'}.</>
+              }
             </div>
-          </button>
-        ))}
-      </CardContent>
+          )}
+        </CardContent>
+      ) : (
+        /* ── Layout: Múltipla Escolha ──────────────────────────────── */
+        <CardContent className="space-y-3">
+          {options.map((option) => (
+            <button
+              key={option.letter}
+              onClick={() => !isAnswered && setSelectedAnswer(option.letter)}
+              disabled={isAnswered}
+              className={`w-full text-left p-4 rounded-lg border-2 transition-all ${getOptionStyle(option.letter)} ${
+                !isAnswered ? 'cursor-pointer' : 'cursor-default'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <span className="font-bold text-purple-700 dark:text-purple-400 shrink-0">{option.letter})</span>
+                <span
+                  className="text-slate-700 dark:text-slate-200 flex-1"
+                  dangerouslySetInnerHTML={{ __html: option.text }}
+                />
+                {isAnswered && option.letter === question.correct_answer && (
+                  <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                )}
+                {isAnswered && option.letter === selectedAnswer && option.letter !== question.correct_answer && (
+                  <XCircle className="w-5 h-5 text-red-600 shrink-0" />
+                )}
+              </div>
+            </button>
+          ))}
+        </CardContent>
+      )}
 
       {!isAnswered && (
         <CardFooter>
