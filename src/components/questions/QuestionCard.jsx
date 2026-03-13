@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,63 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import CommentSection from './CommentSection';
 import ReportModal from './ReportModal';
+
+/* ── Dropdown para assuntos extras ─────────────────────────────────── */
+function SubjectsDropdown({ subjects }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Fecha ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (!subjects || subjects.length === 0) return null;
+
+  const [first, ...rest] = subjects;
+
+  return (
+    <div className="flex items-center gap-1 flex-wrap" ref={ref}>
+      {/* Primeiro assunto — sempre visível */}
+      <span className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+        {first}
+      </span>
+
+      {/* Botão "+N" só aparece se houver mais assuntos */}
+      {rest.length > 0 && (
+        <div className="relative">
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="flex items-center gap-0.5 text-xs text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700 px-2 py-1 rounded hover:bg-purple-100 dark:hover:bg-purple-800/40 transition-colors font-medium"
+          >
+            +{rest.length}
+            {open
+              ? <ChevronUp className="w-3 h-3" />
+              : <ChevronDown className="w-3 h-3" />}
+          </button>
+
+          {/* Dropdown com os demais assuntos */}
+          {open && (
+            <div className="absolute left-0 top-full mt-1 z-50 min-w-[180px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1">
+              {rest.map((subject, idx) => (
+                <span
+                  key={idx}
+                  className="block px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-100 dark:border-slate-700 last:border-0"
+                >
+                  {subject}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function QuestionCard({ question, onAnswer, savedInNotebook = false, onSaveToggle, previouslyAnswered = null }) {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -132,13 +189,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
               )}
             </div>
             {question.subjects && question.subjects.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {question.subjects.map((subject, idx) => (
-                  <span key={idx} className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
-                    {subject}
-                  </span>
-                ))}
-              </div>
+              <SubjectsDropdown subjects={question.subjects} />
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
