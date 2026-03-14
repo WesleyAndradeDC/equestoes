@@ -45,6 +45,10 @@ class QuestionService {
     return apiClient.delete(API_ENDPOINTS.QUESTION_BY_ID(id));
   }
 
+  async getFilters() {
+    return apiClient.get(API_ENDPOINTS.QUESTION_FILTERS);
+  }
+
   async filter(filters) {
     const params = new URLSearchParams();
     Object.keys(filters).forEach(key => {

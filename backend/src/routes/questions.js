@@ -5,6 +5,7 @@ import {
   createQuestion,
   updateQuestion,
   deleteQuestion,
+  getFilters,
 } from '../controllers/questionController.js';
 import {
   authenticate,
@@ -13,6 +14,9 @@ import {
 } from '../middlewares/auth.js';
 
 const router = express.Router();
+
+// Filtros disponíveis (disciplinas e assuntos do banco) — antes das rotas com :id
+router.get('/filters', authenticate, requireActiveSubscription, getFilters);
 
 // Conteúdo protegido: requer autenticação + assinatura ativa
 router.get('/',    authenticate, requireActiveSubscription, listQuestions);

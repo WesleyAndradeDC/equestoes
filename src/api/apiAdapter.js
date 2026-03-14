@@ -25,6 +25,7 @@ const Question = {
   update: (id, data) => questionService.update(id, data),
   delete: (id) => questionService.delete(id),
   filter: (filters) => questionService.filter(filters),
+  getFilters: () => questionService.getFilters(),
 };
 
 const Attempt = {

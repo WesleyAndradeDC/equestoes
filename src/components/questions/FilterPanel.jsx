@@ -11,25 +11,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 
-const DISCIPLINES = [
-  'Língua Portuguesa',
-  'Matemática e Raciocínio Lógico',
-  'Informática',
-  'Direito Constitucional',
-  'Direito Administrativo',
-  'Atualidades',
-  'Ética no Serviço Público',
-  'Direito Penal',
-  'Direito Processual Penal',
-  'Direitos Humanos',
-  'Administração Pública',
-  'Administração Financeira e Orçamentária',
-  'Contabilidade',
-  'Arquivologia',
-  'Matemática Financeira',
-  'Conhecimentos Bancários',
-  'Legislação Especial'
-];
 
 function SearchableSelect({ value, onValueChange, options, placeholder, label }) {
   const [open, setOpen] = useState(false);
@@ -106,7 +87,7 @@ function SearchableSelect({ value, onValueChange, options, placeholder, label })
   );
 }
 
-export default function FilterPanel({ filters, onFilterChange, onClearFilters, availableSubjects = [], subjectsByDiscipline = {} }) {
+export default function FilterPanel({ filters, onFilterChange, onClearFilters, availableDisciplines = [], availableSubjects = [], subjectsByDiscipline = {} }) {
   const handleDisciplineChange = (discipline) => {
     // Quando muda a disciplina, limpa o assunto selecionado
     onFilterChange({ ...filters, discipline, subject: null });
@@ -183,8 +164,8 @@ export default function FilterPanel({ filters, onFilterChange, onClearFilters, a
           <SearchableSelect
             value={filters.discipline}
             onValueChange={handleDisciplineChange}
-            options={DISCIPLINES}
-            placeholder="Todas as disciplinas"
+            options={availableDisciplines}
+            placeholder={availableDisciplines.length > 0 ? "Todas as disciplinas" : "Carregando..."}
             label="disciplina"
           />
         </div>

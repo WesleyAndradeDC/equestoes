@@ -54,7 +54,13 @@ export default function Questions() {
       }
     },
     retry: 1,
-    staleTime: 0, // Sempre buscar dados frescos
+    staleTime: 0,
+  });
+
+  const { data: questionFilters = { disciplines: [], subjects: [], subjectsByDiscipline: {} } } = useQuery({
+    queryKey: ['questionFilters'],
+    queryFn: () => base44.entities.Question.getFilters(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: allAttempts = [] } = useQuery({
@@ -99,38 +105,10 @@ export default function Questions() {
     },
   });
 
-  // Get all unique subjects for filter
-  const availableSubjects = React.useMemo(() => {
-    const subjects = new Set();
-    questions.forEach(q => {
-      if (q.subjects && Array.isArray(q.subjects)) {
-        q.subjects.forEach(s => subjects.add(s));
-      }
-    });
-    return Array.from(subjects).sort();
-  }, [questions]);
-
-  // Get subjects grouped by discipline from actual database questions
-  const subjectsByDiscipline = React.useMemo(() => {
-    const map = {};
-    questions.forEach(q => {
-      if (q.discipline && q.subjects && Array.isArray(q.subjects)) {
-        if (!map[q.discipline]) {
-          map[q.discipline] = new Set();
-        }
-        q.subjects.forEach(s => {
-          if (s && s.trim()) {
-            map[q.discipline].add(s);
-          }
-        });
-      }
-    });
-    // Convert sets to sorted arrays
-    Object.keys(map).forEach(key => {
-      map[key] = Array.from(map[key]).sort();
-    });
-    return map;
-  }, [questions]);
+  // Disciplinas, assuntos e agrupamento vindos diretamente do banco de dados
+  const availableDisciplines = questionFilters.disciplines;
+  const availableSubjects = questionFilters.subjects;
+  const subjectsByDiscipline = questionFilters.subjectsByDiscipline;
 
   // Get user's attempts for status filter
   const userAttempts = React.useMemo(() => {
@@ -337,6 +315,7 @@ export default function Questions() {
             filters={filters}
             onFilterChange={setFilters}
             onClearFilters={handleClearFilters}
+            availableDisciplines={availableDisciplines}
             availableSubjects={availableSubjects}
             subjectsByDiscipline={subjectsByDiscipline}
           />

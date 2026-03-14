@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
 
   // Questions
   QUESTIONS: '/questions',
+  QUESTION_FILTERS: '/questions/filters',
   QUESTION_BY_ID: (id) => `/questions/${id}`,
 
   // Attempts

@@ -1,5 +1,51 @@
 import prisma from '../config/database.js';
 
+// Get distinct filter values (disciplines and subjects) from the database
+export const getFilters = async (req, res) => {
+  try {
+    const questions = await prisma.question.findMany({
+      select: { discipline: true, subjects: true },
+    });
+
+    const disciplinesSet = new Set();
+    const subjectsSet = new Set();
+    const subjectsByDiscipline = {};
+
+    questions.forEach(q => {
+      if (q.discipline) {
+        disciplinesSet.add(q.discipline);
+        if (!subjectsByDiscipline[q.discipline]) {
+          subjectsByDiscipline[q.discipline] = new Set();
+        }
+      }
+      if (Array.isArray(q.subjects)) {
+        q.subjects.forEach(s => {
+          if (s && s.trim()) {
+            subjectsSet.add(s.trim());
+            if (q.discipline) {
+              subjectsByDiscipline[q.discipline].add(s.trim());
+            }
+          }
+        });
+      }
+    });
+
+    // Convert Sets to sorted arrays
+    const result = {
+      disciplines: Array.from(disciplinesSet).sort(),
+      subjects: Array.from(subjectsSet).sort(),
+      subjectsByDiscipline: Object.fromEntries(
+        Object.entries(subjectsByDiscipline).map(([k, v]) => [k, Array.from(v).sort()])
+      ),
+    };
+
+    res.json(result);
+  } catch (error) {
+    console.error('Get filters error:', error);
+    res.status(500).json({ error: 'Erro ao buscar filtros' });
+  }
+};
+
 // List all questions
 export const listQuestions = async (req, res) => {
   try {
