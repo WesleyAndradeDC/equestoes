@@ -126,7 +126,7 @@ export default function Questions() {
     }
 
     // Restriction by subscription type
-    if (isRestrictedUser && question.discipline !== 'Língua Portuguesa') {
+    if (isRestrictedUser && question.discipline !== 'Português') {
       return false;
     }
 
@@ -303,7 +303,7 @@ export default function Questions() {
         </p>
         {isRestrictedUser && (
           <p className="text-sm text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-900/30 px-4 py-2 rounded-lg inline-block">
-            🔒 Plano Clube do Pedrão: Acesso apenas a questões de Língua Portuguesa
+            🔒 Plano Clube do Pedrão: Acesso apenas a questões de Português
           </p>
         )}
       </div>

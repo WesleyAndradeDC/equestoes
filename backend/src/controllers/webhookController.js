@@ -4,7 +4,7 @@ import { syncUserSubscriptionCache } from '../utils/subscriptionUtils.js';
 // Mapeamento de product_ids para tipos de assinatura.
 // IMPORTANTE: cada ID deve aparecer em apenas UM plano.
 const PRODUCT_MAPPING = {
-  // Clube do Pedrão — acesso restrito a Língua Portuguesa
+  // Clube do Pedrão — acesso restrito a Português
   'Aluno Clube do Pedrão':  [35416, 35418, 35413, 47507, 47485],
   // Clube dos Cascas — acesso completo (inclui PRF 2026: 47818)
   'Aluno Clube dos Cascas': [19479, 4252, 28237, 28239, 28240, 45748, 47818],
@@ -47,7 +47,7 @@ function identifySubscriptionType(lineItems) {
     return 'Aluno Banco do Brasil';
   }
 
-  // 3. Clube do Pedrão — acesso restrito a Língua Portuguesa
+  // 3. Clube do Pedrão — acesso restrito a Português
   if (productIds.some(id => PRODUCT_MAPPING['Aluno Clube do Pedrão'].includes(id))) {
     console.log('✅ Tipo identificado: Aluno Clube do Pedrão');
     return 'Aluno Clube do Pedrão';

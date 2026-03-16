@@ -49,12 +49,12 @@ export default function Home() {
   });
 
   // FILTRAR QUESTÕES BASEADO NO TIPO DE ASSINATURA DO USUÁRIO
-  // Alunos do Clube do Pedrão só têm acesso a Língua Portuguesa
+  // Alunos do Clube do Pedrão só têm acesso a Português
   const questions = useMemo(() => {
     if (!user?.subscription_type) return allQuestions;
     
     if (user.subscription_type === 'Aluno Clube do Pedrão') {
-      const filtered = allQuestions.filter(q => q.discipline === 'Língua Portuguesa');
+      const filtered = allQuestions.filter(q => q.discipline === 'Português');
       console.log('🔒 Home: Questões filtradas para Clube do Pedrão:', filtered.length, 'de', allQuestions.length);
       return filtered;
     }

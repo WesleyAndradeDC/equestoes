@@ -8,7 +8,7 @@
 // IDs exclusivos de cada plano — NÃO devem se sobrepor.
 // Cada product_id deve pertencer a apenas um plano.
 export const PRODUCT_MAPPING = {
-  // Clube do Pedrão — acesso restrito a Língua Portuguesa
+  // Clube do Pedrão — acesso restrito a Português
   'Aluno Clube do Pedrão':    [35416, 35418, 35413, 47507, 47485],
   // Clube dos Cascas — acesso completo a todas as disciplinas
   // Inclui PRF 2026 (47818) que concede o mesmo acesso do Cascas
@@ -55,7 +55,7 @@ export function identifySubscriptionType(lineItems) {
   if (ids.some((id) => PRODUCT_MAPPING['Aluno Banco do Brasil'].includes(id))) {
     return 'Aluno Banco do Brasil';
   }
-  // Clube do Pedrão — acesso restrito a Língua Portuguesa
+  // Clube do Pedrão — acesso restrito a Português
   if (ids.some((id) => PRODUCT_MAPPING['Aluno Clube do Pedrão'].includes(id))) {
     return 'Aluno Clube do Pedrão';
   }
