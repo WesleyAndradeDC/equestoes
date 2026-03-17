@@ -77,7 +77,7 @@ BEGIN
 INSERT INTO users (id, email, password_hash, full_name, role,
   subscription_type, subscription_status, subscription_active,
   membership_status, membership_active, membership_plan,
-  first_login, study_streak, last_study_date)
+  first_login, study_streak, last_study_date, updated_at)
 VALUES
   -- Admin
   (v_admin_id,
@@ -87,7 +87,7 @@ VALUES
    'admin',
    'Professor', 'active', true,
    'active', true, 'Admin',
-   false, 15, CURRENT_DATE::text),
+   false, 15, CURRENT_DATE::text, NOW()),
 
   -- Professor
   (v_professor_id,
@@ -97,7 +97,7 @@ VALUES
    'user',
    'Professor', 'active', true,
    'active', true, 'Professor',
-   false, 7, CURRENT_DATE::text),
+   false, 7, CURRENT_DATE::text, NOW()),
 
   -- Aluno Clube dos Cascas (acesso total + E-Tutory)
   (v_cascas_id,
@@ -107,7 +107,7 @@ VALUES
    'user',
    'Aluno Clube dos Cascas', 'active', true,
    'active', true, 'Clube dos Cascas',
-   false, 12, CURRENT_DATE::text),
+   false, 12, CURRENT_DATE::text, NOW()),
 
   -- Aluno Clube do Pedrão (acesso restrito a Português)
   (v_pedrao_id,
@@ -117,19 +117,19 @@ VALUES
    'user',
    'Aluno Clube do Pedrão', 'active', true,
    'active', true, 'Clube do Pedrão',
-   false, 3, (CURRENT_DATE - INTERVAL '1 day')::text);
+   false, 3, (CURRENT_DATE - INTERVAL '1 day')::text, NOW());
 
 RAISE NOTICE '✅ Usuários criados';
 
 -- ─── ASSINATURAS ──────────────────────────────────────────────
 INSERT INTO subscriptions (id, user_id, status, subscription_type,
-  woo_subscription_id, started_at, expires_at)
+  woo_subscription_id, started_at, expires_at, updated_at)
 VALUES
   (gen_random_uuid(), v_cascas_id, 'active', 'Aluno Clube dos Cascas',
-   'WC-1001', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days'),
+   'WC-1001', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days', NOW()),
 
   (gen_random_uuid(), v_pedrao_id, 'active', 'Aluno Clube do Pedrão',
-   'WC-1002', NOW() - INTERVAL '15 days', NOW() + INTERVAL '350 days');
+   'WC-1002', NOW() - INTERVAL '15 days', NOW() + INTERVAL '350 days', NOW());
 
 RAISE NOTICE '✅ Assinaturas criadas';
 
@@ -140,7 +140,7 @@ RAISE NOTICE '✅ Assinaturas criadas';
 -- ── Língua Portuguesa ────────────────────────────────────────
 INSERT INTO questions (id, code, text, discipline, difficulty, exam_board, year,
   position, option_a, option_b, option_c, option_d, option_e,
-  correct_answer, explanation, question_type, subjects, created_by)
+  correct_answer, explanation, question_type, subjects, created_by, updated_at)
 VALUES
   (v_q1, 'LP0001',
    'Assinale a alternativa em que o uso da crase está CORRETO:',
@@ -154,7 +154,7 @@ VALUES
    'A alternativa A está correta. Usa-se crase antes de substantivo feminino precedido de preposição "a" + artigo "a". "Fui à casa" = fui + a (prep.) + a (artigo) + casa. B) "pessoas" não admite artigo definido feminino neste contexto. C) "horas" no sentido de tempo decorrido não admite crase. D) Artigo masculino não admite crase. E) Pleonasmo — "ao" já é "a + o".',
    'Múltipla Escolha',
    ARRAY['Crase', 'Regência Verbal'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q2, 'LP0002',
    'Qual das alternativas apresenta concordância verbal CORRETA?',
@@ -168,7 +168,7 @@ VALUES
    'A alternativa C está correta. O verbo "haver" no sentido de "existir" é impessoal e deve ficar na 3ª pessoa do singular. O verbo "dever" concorda com "haver". As demais alternativas erram ao flexionar "haver" no plural.',
    'Múltipla Escolha',
    ARRAY['Concordância Verbal', 'Verbos Impessoais'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q3, 'LP0003',
    'Em relação à pontuação, assinale a alternativa INCORRETA:',
@@ -182,7 +182,7 @@ VALUES
    'A alternativa E está INCORRETA. A vírgula NÃO deve separar o sujeito de seu predicado. Isso constitui erro grave de pontuação. As demais alternativas descrevem usos corretos dos sinais de pontuação.',
    'Múltipla Escolha',
    ARRAY['Pontuação', 'Vírgula'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q4, 'LP0004',
    'A respeito das classes de palavras, assinale a alternativa correta sobre os pronomes relativos:',
@@ -196,7 +196,7 @@ VALUES
    'A alternativa A está correta. O pronome relativo "que" é o de maior abrangência, podendo se referir a pessoas, animais ou coisas, no singular ou plural. "Cujo" concorda com o SUBSEQUENTE (não com o antecedente). "Onde" refere-se a lugar com ideia de permanência. "Quem" refere-se apenas a seres animados.',
    'Múltipla Escolha',
    ARRAY['Pronomes Relativos', 'Classes de Palavras'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
 -- ── Matemática e Raciocínio Lógico ───────────────────────────
   (v_q5, 'MAT0001',
@@ -211,7 +211,7 @@ VALUES
    'Aumento de 20%: R$ 200,00 × 1,20 = R$ 240,00. Desconto de 20% sobre o novo valor: R$ 240,00 × 0,80 = R$ 192,00. Atenção: aumentar 20% e descontar 20% não resulta no valor original, pois as bases de cálculo são diferentes.',
    'Múltipla Escolha',
    ARRAY['Porcentagem', 'Matemática Básica'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q6, 'MAT0002',
    'Se em uma progressão aritmética os termos a₁ = 3 e a₅ = 11, qual é a razão da PA?',
@@ -225,7 +225,7 @@ VALUES
    'Na PA, aₙ = a₁ + (n-1)r. Para a₅: 11 = 3 + (5-1)r → 11 = 3 + 4r → 4r = 8 → r = 2. A razão da PA é 2.',
    'Múltipla Escolha',
    ARRAY['Progressão Aritmética', 'Álgebra'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q7, 'MAT0003',
    'Uma urna contém 4 bolas vermelhas e 6 bolas azuis. Retirando-se uma bola ao acaso, qual é a probabilidade de ser vermelha?',
@@ -239,7 +239,7 @@ VALUES
    'Total de bolas: 4 + 6 = 10. Probabilidade de vermelha: P = 4/10 = 2/5. Logo a resposta é A.',
    'Múltipla Escolha',
    ARRAY['Probabilidade', 'Combinatória'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
 -- ── Direito Constitucional ────────────────────────────────────
   (v_q8, 'DC0001',
@@ -254,7 +254,7 @@ VALUES
    'O habeas corpus é a ação constitucional que protege a liberdade de locomoção sempre que alguém sofrer ou se achar ameaçado de sofrer violência ou coação em sua liberdade (CF/88, art. 5º, LXVIII). Os direitos fundamentais não são absolutos. O MS protege contra ato de autoridade pública ou agente no exercício de atribuições do poder público.',
    'Múltipla Escolha',
    ARRAY['Direitos Fundamentais', 'Remédios Constitucionais'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q9, 'DC0002',
    'De acordo com a CF/88, o processo de emenda constitucional:',
@@ -268,7 +268,7 @@ VALUES
    'Conforme art. 60, §1º da CF/88, a Constituição não poderá ser emendada na vigência de intervenção federal, de estado de defesa ou de estado de sítio. A PEC exige 3/5 dos membros de cada Casa, em dois turnos. É promulgada pelas Mesas da Câmara e do Senado. O voto direto é cláusula pétrea.',
    'Múltipla Escolha',
    ARRAY['Emenda Constitucional', 'Processo Legislativo'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q10, 'DC0003',
    'Em relação à organização do Estado brasileiro, é CORRETO afirmar:',
@@ -282,7 +282,7 @@ VALUES
    'O Brasil adota: forma de governo Republicana (art. 1º), sistema de governo Presidencialista, forma de Estado Federativa (não unitária). A Federação é de três níveis: União, Estados/DF e Municípios. A soberania popular se exerce pelo sufrágio universal, plebiscito, referendo e iniciativa popular.',
    'Múltipla Escolha',
    ARRAY['Organização do Estado', 'Federalismo'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
 -- ── Direito Administrativo ────────────────────────────────────
   (v_q11, 'DA0001',
@@ -297,7 +297,7 @@ VALUES
    'O princípio da eficiência foi introduzido na CF/88 pelo art. 37, caput, por meio da EC 19/1998 (Reforma Administrativa). Na Adm. Pública, a legalidade é mais restrita: o administrador só pode fazer o que a lei expressamente permite. O princípio da impessoalidade veda promoção pessoal, não a publicidade em si.',
    'Múltipla Escolha',
    ARRAY['Princípios da Administração', 'LIMPE'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q12, 'DA0002',
    'O ato administrativo que estabelece regras gerais e abstratas, de caráter normativo, expedido pelo Poder Executivo é denominado:',
@@ -311,7 +311,7 @@ VALUES
    'O decreto regulamentador (ou regulamento) é o ato administrativo normativo expedido pelo Chefe do Poder Executivo para dar fiel execução às leis (CF/88, art. 84, IV). É o ato normativo de maior hierarquia expedido pelo Executivo. A portaria é ato interno de gestão. A resolução é ato de órgãos colegiados.',
    'Múltipla Escolha',
    ARRAY['Atos Administrativos', 'Espécies de Atos'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
 -- ── Informática ───────────────────────────────────────────────
   (v_q13, 'INF0001',
@@ -326,7 +326,7 @@ VALUES
    'O ataque Man-in-the-Middle (MitM) ocorre quando o atacante se interpõe na comunicação entre duas partes, podendo interceptar, ler e modificar os dados trafegados sem que as partes percebam. Phishing é engenharia social. Ransomware sequestra dados. SQL Injection ataca bancos de dados. Brute Force testa senhas exaustivamente.',
    'Múltipla Escolha',
    ARRAY['Segurança da Informação', 'Ataques Cibernéticos'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q14, 'INF0002',
    'Sobre planilhas eletrônicas (Microsoft Excel/LibreOffice Calc), a fórmula que calcula a média aritmética dos valores de A1 até A10 é:',
@@ -340,7 +340,7 @@ VALUES
    'A função correta para calcular a média em português é =MÉDIA(A1:A10). Embora =SOMA(A1:A10)/10 produza o mesmo resultado, não é a função específica de média. =MED calcula a mediana (valor central). =AVG e =MEAN são funções em inglês (não disponíveis em versão em português).',
    'Múltipla Escolha',
    ARRAY['Excel', 'Planilhas', 'Fórmulas'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q15, 'INF0003',
    'Em relação às redes de computadores, o protocolo responsável pela resolução de nomes de domínio em endereços IP é:',
@@ -354,7 +354,7 @@ VALUES
    'O DNS (Domain Name System) é o protocolo responsável por traduzir (resolver) nomes de domínio legíveis por humanos (como www.equestoes.com) em endereços IP numéricos. DHCP atribui endereços IP automaticamente. FTP é para transferência de arquivos. HTTP é para navegação web. SMTP é para envio de e-mails.',
    'Múltipla Escolha',
    ARRAY['Redes de Computadores', 'Protocolos'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
 -- ── Direito Penal ─────────────────────────────────────────────
   (v_q16, 'DP0001',
@@ -367,7 +367,7 @@ VALUES
    'ERRADO. Conforme o art. 14, parágrafo único do Código Penal, a tentativa é punida com a pena correspondente ao crime consumado, DIMINUÍDA DE UM A DOIS TERÇOS. Apenas nos crimes em que a lei expressamente determina que a tentativa é punida igualmente ao crime consumado é que as penas se equiparam.',
    'Certo ou Errado',
    ARRAY['Tentativa', 'Teoria do Crime'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q17, 'DP0002',
    'Sobre a lei penal no tempo, é correto afirmar que a lei penal mais grave:',
@@ -381,7 +381,7 @@ VALUES
    'Princípio da irretroatividade da lei penal mais gravosa (art. 5º, XL da CF/88): a lei penal não retroagirá, SALVO para beneficiar o réu. Portanto, lei mais grave: não retroage. Lei mais branda (novatio legis in mellius): retroage, inclusive para condenados em cumprimento de pena.',
    'Múltipla Escolha',
    ARRAY['Lei Penal no Tempo', 'Retroatividade'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
 -- ── Administração Pública ─────────────────────────────────────
   (v_q18, 'ADM0001',
@@ -396,7 +396,7 @@ VALUES
    'A Administração Gerencial (New Public Management) surgiu nos anos 1980 como resposta às falhas do modelo burocrático. Seus pilares são: eficiência, orientação para resultados, avaliação por desempenho, descentralização e foco no cidadão como cliente. No Brasil, a Reforma Gerencial de 1995 (Bresser-Pereira) implementou esse modelo.',
    'Múltipla Escolha',
    ARRAY['Modelos de Administração', 'Reforma Administrativa'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q19, 'AFO0001',
    'No orçamento público brasileiro, o princípio que determina que as receitas e despesas devem constar integralmente no orçamento, sem deduções, é o princípio da:',
@@ -410,7 +410,7 @@ VALUES
    'O princípio da universalidade (art. 4º da Lei 4.320/64) determina que o orçamento deve conter todas as receitas e despesas, sem qualquer dedução, e que todas as receitas e despesas devem integrar o orçamento (vedado o orçamento paralelo). O princípio da unidade exige que haja um único orçamento.',
    'Múltipla Escolha',
    ARRAY['Princípios Orçamentários', 'Lei 4.320/64'],
-   'professor@equestoes.com'),
+   'professor@equestoes.com', NOW()),
 
   (v_q20, 'ETI0001',
    'A respeito da Lei nº 8.112/1990, que dispõe sobre o regime jurídico dos servidores públicos federais, é correto afirmar que a posse:',
@@ -424,26 +424,26 @@ VALUES
    'Conforme art. 13 da Lei 8.112/90, a posse ocorrerá no prazo de 30 (trinta) dias contados da publicação do ato de nomeação. Se o servidor não tomar posse no prazo, o ato de nomeação será tornado sem efeito. A estabilidade é adquirida após 3 anos de efetivo exercício.',
    'Múltipla Escolha',
    ARRAY['Lei 8.112/90', 'Servidor Público'],
-   'professor@equestoes.com');
+   'professor@equestoes.com', NOW());
 
 RAISE NOTICE '✅ 20 questões criadas';
 
 -- ─────────────────────────────────────────────────────────────
 -- NOTEBOOKS (Cadernos)
 -- ─────────────────────────────────────────────────────────────
-INSERT INTO notebooks (id, name, description, color, created_by)
+INSERT INTO notebooks (id, name, description, color, created_by, updated_at)
 VALUES
   (v_nb1,
    'Revisão — Língua Portuguesa',
    'Questões de LP para revisar antes da prova',
    'blue',
-   'aluno@equestoes.com'),
+   'aluno@equestoes.com', NOW()),
 
   (v_nb2,
    'Errei e Refiz',
    'Questões que errei na primeira tentativa',
    'red',
-   'aluno@equestoes.com');
+   'aluno@equestoes.com', NOW());
 
 -- Adicionar questões aos cadernos
 INSERT INTO notebook_questions (notebook_id, question_id, added_at)
@@ -534,11 +534,11 @@ RAISE NOTICE '✅ Comentários criados';
 -- ─────────────────────────────────────────────────────────────
 -- REPORTS DE QUESTÕES
 -- ─────────────────────────────────────────────────────────────
-INSERT INTO question_reports (id, question_id, user_id, reason, status)
+INSERT INTO question_reports (id, question_id, user_id, reason, status, updated_at)
 VALUES
   (gen_random_uuid(), v_q6, v_cascas_id,
    'Acredito que a questão tem um erro no enunciado — faltou especificar se a PA é crescente ou decrescente.',
-   'pending');
+   'pending', NOW());
 
 RAISE NOTICE '✅ Report de questão criado';
 
@@ -547,49 +547,49 @@ RAISE NOTICE '✅ Report de questão criado';
 -- ─────────────────────────────────────────────────────────────
 
 -- Flashcards Globais (criados pelo admin)
-INSERT INTO flashcards (id, front, back, discipline, subjects, is_global, created_by)
+INSERT INTO flashcards (id, front, back, discipline, subjects, is_global, created_by, updated_at)
 VALUES
   (v_fc1,
    'O que é o princípio da legalidade na Administração Pública?',
    'Na Adm. Pública, o administrador só pode fazer o que a lei expressamente PERMITE (diferente do direito privado, onde tudo que não é proibido é permitido). Base: art. 37, caput da CF/88.',
    'Direito Administrativo',
    ARRAY['Princípios da Administração', 'LIMPE'],
-   true, v_admin_id),
+   true, v_admin_id, NOW()),
 
   (v_fc2,
    'Qual a diferença entre crime doloso e culposo?',
    'DOLOSO: agente quis o resultado (dolo direto) ou assumiu o risco de produzi-lo (dolo eventual). CULPOSO: agente não quis o resultado, mas agiu com imprudência, negligência ou imperícia. CP, art. 18.',
    'Direito Penal',
    ARRAY['Elementos do Crime', 'Culpabilidade'],
-   true, v_admin_id),
+   true, v_admin_id, NOW()),
 
   (v_fc3,
    'O que é crase e quando usar?',
    'Crase é a fusão da preposição "a" com o artigo definido feminino "a" ou com os pronomes demonstrativos "aquele(s)", "aquela(s)", "aquilo". Use quando: há preposição "a" obrigatória + palavra feminina que admite artigo definido "a".',
    'Língua Portuguesa',
    ARRAY['Crase', 'Regência'],
-   true, v_admin_id),
+   true, v_admin_id, NOW()),
 
   (v_fc4,
    'Quais são as cláusulas pétreas da CF/88?',
    'Art. 60, §4º da CF/88 — não podem ser abolidas por emenda: I) forma federativa de Estado; II) voto direto, secreto, universal e periódico; III) separação dos Poderes; IV) direitos e garantias individuais.',
    'Direito Constitucional',
    ARRAY['Emenda Constitucional', 'Cláusulas Pétreas'],
-   true, v_admin_id),
+   true, v_admin_id, NOW()),
 
   (v_fc5,
    'O que é o habeas corpus?',
    'Remédio constitucional (CF/88, art. 5º, LXVIII) que protege a LIBERDADE DE LOCOMOÇÃO. Cabe quando alguém sofrer ou se achar AMEAÇADO de sofrer violência ou coação em sua liberdade de ir, vir e permanecer.',
    'Direito Constitucional',
    ARRAY['Remédios Constitucionais', 'Direitos Fundamentais'],
-   true, v_admin_id),
+   true, v_admin_id, NOW()),
 
   (v_fc6,
    'Qual a fórmula da probabilidade clássica?',
    'P(A) = n(A) / n(Ω), onde: P(A) = probabilidade do evento A, n(A) = número de casos favoráveis, n(Ω) = número total de casos possíveis (espaço amostral). A probabilidade sempre está entre 0 e 1.',
    'Matemática e Raciocínio Lógico',
    ARRAY['Probabilidade', 'Combinatória'],
-   true, v_admin_id),
+   true, v_admin_id, NOW()),
 
 -- Flashcards Pessoais da Ana (aluno Cascas)
   (v_fc7,
@@ -597,14 +597,14 @@ VALUES
    'O verbo "haver" é impessoal (fica no singular) quando tem sentido de EXISTIR ("Havia muitas pessoas") ou OCORRER ("Houve um problema"). Não deve ser flexionado: ERRADO = "Haviam pessoas", CERTO = "Havia pessoas".',
    'Língua Portuguesa',
    ARRAY['Concordância Verbal', 'Verbos Impessoais'],
-   false, v_cascas_id),
+   false, v_cascas_id, NOW()),
 
   (v_fc8,
    'Diferença entre Progressão Aritmética (PA) e Geométrica (PG)',
    'PA: cada termo é obtido somando uma RAZÃO (r) constante ao anterior. Fórmula: aₙ = a₁ + (n-1)r. | PG: cada termo é obtido multiplicando o anterior por uma RAZÃO (q) constante. Fórmula: aₙ = a₁ × q^(n-1).',
    'Matemática e Raciocínio Lógico',
    ARRAY['Progressão Aritmética', 'Progressão Geométrica'],
-   false, v_cascas_id);
+   false, v_cascas_id, NOW());
 
 RAISE NOTICE '✅ Flashcards criados (6 globais + 2 pessoais)';
 
