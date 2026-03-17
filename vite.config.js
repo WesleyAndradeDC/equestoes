@@ -3,29 +3,23 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // Atualiza o SW automaticamente quando há nova versão do app
       registerType: 'autoUpdate',
-
-      // Inclui os assets estáticos da pasta public no cache
-      includeAssets: ['favicon.svg', 'icons/*.png'],
-
-      // Manifest do app (o que o browser lê para mostrar o prompt de instalação)
+      includeAssets: ['favicon.svg', 'logo.svg', 'logo-icon.svg', 'icons/*.png'],
       manifest: {
-        name: 'G-CONCURSOS — Gramatique',
-        short_name: 'G-Concursos',
-        description: 'Plataforma de questões para preparação em concursos públicos',
-        theme_color: '#8F39D8',
-        background_color: '#0f0a1e',
-        display: 'standalone',       // Modo app: sem barra de endereço
-        orientation: 'portrait',     // Preferência retrato (mobile)
+        name: 'E-Questões',
+        short_name: 'E-Questões',
+        description: 'Plataforma de estudos para concursos públicos com questões, flashcards e IA',
+        theme_color: '#2f456d',
+        background_color: '#0a1628',
+        display: 'standalone',
+        orientation: 'portrait',
         start_url: '/',
         scope: '/',
-        id: 'gconcursos-gramatique',
+        id: 'e-questoes',
         lang: 'pt-BR',
         categories: ['education'],
         icons: [
@@ -49,23 +43,15 @@ export default defineConfig({
             src: 'icons/maskable-icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'maskable',    // Ícone adaptativo (Android)
+            purpose: 'maskable',
           },
         ],
       },
-
-      // Workbox: estratégia de cache do Service Worker
       workbox: {
-        // Arquivos pré-cacheados na instalação (shell do app)
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-
-        // Não aplicar cache nas rotas da API
         navigateFallbackDenylist: [/^\/api\//],
-
-        // Cache em runtime para recursos externos
         runtimeCaching: [
           {
-            // Google Fonts — CSS
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
@@ -75,7 +61,6 @@ export default defineConfig({
             },
           },
           {
-            // Google Fonts — arquivos de fonte
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
@@ -85,14 +70,11 @@ export default defineConfig({
             },
           },
           {
-            // API do backend — nunca usar cache (sempre busca na rede)
             urlPattern: /\/api\/.*/i,
             handler: 'NetworkOnly',
           },
         ],
       },
-
-      // Desabilita o DevOptions para não mostrar painel de debug em produção
       devOptions: {
         enabled: false,
       },
@@ -102,11 +84,11 @@ export default defineConfig({
   server: {
     allowedHosts: true,
     port: 5173,
-    host: true
+    host: true,
   },
   preview: {
     port: 5173,
-    host: true
+    host: true,
   },
   build: {
     outDir: 'dist',
@@ -114,15 +96,15 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: undefined
-      }
-    }
+        manualChunks: undefined,
+      },
+    },
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-    extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json']
+    extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json'],
   },
   optimizeDeps: {
     esbuildOptions: {
@@ -131,4 +113,4 @@ export default defineConfig({
       },
     },
   },
-}) 
+})

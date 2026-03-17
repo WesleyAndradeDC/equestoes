@@ -1,7 +1,7 @@
 services:
-  # Frontend Static Site
+  # Frontend Static Site — E-Questões
   - type: web
-    name: gconcursos-frontend
+    name: e-questoes-frontend
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
@@ -22,5 +22,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://gconcursos-api.onrender.com/api
-
+        value: https://e-questoes-api.onrender.com/api

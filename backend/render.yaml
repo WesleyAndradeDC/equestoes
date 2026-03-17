@@ -1,9 +1,8 @@
-# render.yaml - Configuração para deploy no Render
+# render.yaml — E-Questões Backend (Render Deploy)
 
 services:
-  # Backend API
   - type: web
-    name: gconcursos-api
+    name: e-questoes-api
     env: node
     region: oregon
     plan: free
@@ -15,22 +14,20 @@ services:
         value: production
       - key: DATABASE_URL
         fromDatabase:
-          name: gconcursos-db
+          name: e-questoes-db
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: OPENAI_API_KEY
-        sync: false  # Você precisará adicionar manualmente no Render Dashboard
+        sync: false
       - key: FRONTEND_URL
-        value: https://seu-frontend.onrender.com  # Atualize após criar o frontend
+        value: https://e-questoes-frontend.onrender.com
 
 databases:
-  # PostgreSQL Database
-  - name: gconcursos-db
-    databaseName: gconcursos
+  - name: e-questoes-db
+    databaseName: equestoes
     region: oregon
     plan: free
     ipAllowList: []
-

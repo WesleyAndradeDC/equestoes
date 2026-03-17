@@ -5,8 +5,8 @@ module.exports = {
   theme: {
   	extend: {
   		fontFamily: {
-  			sans: ['Montserrat', 'system-ui', 'sans-serif'],
-  			montserrat: ['Montserrat', 'sans-serif'],
+  			sans: ['Poppins', 'system-ui', 'sans-serif'],
+  			poppins: ['Poppins', 'sans-serif'],
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -14,10 +14,11 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
-  			gramatique: {
-  				primary: '#8F39D8',
-  				secondary: '#5B2C8E',
-  				light: '#F9F9FB',
+  			eleva: {
+  				primary: '#2f456d',
+  				orange: '#f26836',
+  				black: '#4d4d4e',
+  				white: '#e6e6e6',
   			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -72,20 +73,12 @@ module.exports = {
   		},
   		keyframes: {
   			'accordion-down': {
-  				from: {
-  					height: '0'
-  				},
-  				to: {
-  					height: 'var(--radix-accordion-content-height)'
-  				}
+  				from: { height: '0' },
+  				to: { height: 'var(--radix-accordion-content-height)' }
   			},
   			'accordion-up': {
-  				from: {
-  					height: 'var(--radix-accordion-content-height)'
-  				},
-  				to: {
-  					height: '0'
-  				}
+  				from: { height: 'var(--radix-accordion-content-height)' },
+  				to: { height: '0' }
   			}
   		},
   		animation: {

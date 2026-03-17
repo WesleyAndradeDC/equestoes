@@ -3,7 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { Home, BookOpen, FolderOpen, BarChart3, Trophy, LogOut, Menu, X, Moon, Sun, Bot } from 'lucide-react';
+import {
+  Home, BookOpen, FolderOpen, BarChart3, Trophy,
+  LogOut, Menu, X, Moon, Sun, Bot, Layers
+} from 'lucide-react';
 import TutorChatPopup from '../components/tutor/TutorChatPopup';
 import { Button } from '@/components/ui/button';
 
@@ -26,31 +29,26 @@ export default function Layout({ children, currentPageName }) {
     localStorage.setItem('darkMode', darkMode.toString());
   }, [darkMode]);
 
-  const handleLogout = () => {
-    logout();
-  };
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
+  const handleLogout = () => logout();
+  const toggleDarkMode = () => setDarkMode(!darkMode);
 
   const isAdmin = user?.role === 'admin';
   const isProfessor = user?.subscription_type === 'Professor' || isAdmin;
 
-  // Verificar acesso ao Tutor
   const allowedTutorProfiles = ['Professor', 'Aluno Clube dos Cascas'];
   const hasTutorAccess = user?.role === 'admin' || allowedTutorProfiles.includes(user?.subscription_type);
 
   const navigation = [
     { name: 'Início', page: 'Home', icon: Home },
-    { name: 'Resolver Questões', page: 'Questions', icon: BookOpen },
+    { name: 'E-Questões', page: 'Questions', icon: BookOpen },
     { name: 'Meus Cadernos', page: 'Notebooks', icon: FolderOpen },
     { name: 'Estatísticas', page: 'Stats', icon: BarChart3 },
+    { name: 'Flashcards', page: 'Flashcards', icon: Layers },
     { name: 'Ranking', page: 'Ranking', icon: Trophy },
   ];
 
   if (hasTutorAccess) {
-    navigation.push({ name: 'Tutor', page: 'TutorGramatique', icon: Bot });
+    navigation.push({ name: 'E-Tutory', page: 'ETutory', icon: Bot });
   }
 
   if (isProfessor) {
@@ -63,19 +61,20 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-amber-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-orange-50/20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-50 shadow-sm">
+      <header className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
+
             {/* Logo */}
-            <Link to={createPageUrl('Home')} className="flex items-center group shrink-0">
-                <img 
-                  src="https://gramatiquecursos.com/wp-content/uploads/2024/02/gramatique-lilas.svg" 
-                  alt="Gramatique" 
-                  className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
-                />
-              </Link>
+            <Link to={createPageUrl('Home')} className="flex items-center gap-2 group shrink-0">
+              <img
+                src="/logo.svg"
+                alt="E-Questões"
+                className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
+              />
+            </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-1">
@@ -86,14 +85,14 @@ export default function Layout({ children, currentPageName }) {
                   <Link
                     key={item.page}
                     to={createPageUrl(item.page)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all text-sm font-medium ${
                       isActive
-                        ? 'bg-purple-600 text-white shadow-md'
+                        ? 'bg-[#2f456d] text-white shadow-md'
                         : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
-                    <span className="text-sm font-medium">{item.name}</span>
+                    <span>{item.name}</span>
                   </Link>
                 );
               })}
@@ -101,7 +100,6 @@ export default function Layout({ children, currentPageName }) {
 
             {/* User Menu */}
             <div className="flex items-center space-x-2 sm:space-x-3">
-              {/* Dark Mode Toggle */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -151,7 +149,7 @@ export default function Layout({ children, currentPageName }) {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
                       isActive
-                        ? 'bg-purple-600 text-white shadow-md'
+                        ? 'bg-[#2f456d] text-white shadow-md'
                         : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
@@ -174,13 +172,13 @@ export default function Layout({ children, currentPageName }) {
       <footer className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border-t border-slate-200/60 dark:border-slate-700/60 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-            © 2025 G-CONCURSOS - Plataforma de questões do Gramatique
+            © 2025 E-QUESTÕES — Plataforma de Estudos para Concursos
           </p>
         </div>
       </footer>
 
-      {/* Tutor Chat Popup */}
+      {/* E-Tutory Chat Popup */}
       <TutorChatPopup />
-      </div>
-      );
+    </div>
+  );
 }

@@ -1,9 +1,8 @@
-// API Configuration
+// API Configuration — E-Questões
 const envURL = import.meta.env.VITE_API_BASE_URL;
 const defaultURL = 'http://localhost:5000/api';
-const productionURL = 'https://gconcursos-api.onrender.com/api';
+const productionURL = 'https://e-questoes-api.onrender.com/api';
 
-// Se não tiver variável de ambiente e não estiver em localhost, usa produção
 export const API_BASE_URL =
   envURL ||
   (window.location.hostname === 'localhost' ? defaultURL : productionURL);
@@ -49,8 +48,14 @@ export const API_ENDPOINTS = {
   REPORT_COUNTS: '/reports/counts',
   REPORT_BY_ID: (id) => `/reports/${id}`,
 
-  // Tutor
+  // Tutor (E-Tutory)
   TUTOR_INVOKE: '/tutor/invoke',
+
+  // Flashcards
+  FLASHCARDS: '/flashcards',
+  FLASHCARD_BY_ID: (id) => `/flashcards/${id}`,
+  FLASHCARDS_DUE: '/flashcards/due',
+  FLASHCARD_REVIEW: (id) => `/flashcards/${id}/review`,
 
   // Webhook
   WEBHOOK_WOOCOMMERCE: '/webhook/woocommerce',

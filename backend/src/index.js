@@ -16,16 +16,17 @@ if (missingEnv.length > 0) {
 }
 
 // Import routes
-import authRoutes     from './routes/auth.js';
-import questionRoutes from './routes/questions.js';
-import attemptRoutes  from './routes/attempts.js';
-import notebookRoutes from './routes/notebooks.js';
-import commentRoutes  from './routes/comments.js';
-import userRoutes     from './routes/users.js';
-import tutorRoutes    from './routes/tutor.js';
-import webhookRoutes  from './routes/webhook.js';
-import rankingRoutes  from './routes/ranking.js';
-import reportRoutes   from './routes/reports.js';
+import authRoutes      from './routes/auth.js';
+import questionRoutes  from './routes/questions.js';
+import attemptRoutes   from './routes/attempts.js';
+import notebookRoutes  from './routes/notebooks.js';
+import commentRoutes   from './routes/comments.js';
+import userRoutes      from './routes/users.js';
+import tutorRoutes     from './routes/tutor.js';
+import webhookRoutes   from './routes/webhook.js';
+import rankingRoutes   from './routes/ranking.js';
+import reportRoutes    from './routes/reports.js';
+import flashcardRoutes from './routes/flashcards.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,6 +53,7 @@ app.use(
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
+  'https://e-questoes-frontend.onrender.com',
   'https://gconcursos-frontend.onrender.com',
   'https://www.app.gramatiquecursos.com',
   'https://app.gramatiquecursos.com',
@@ -135,8 +137,8 @@ app.use(globalLimiter);
 // ─── ROOT / HEALTH ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({
-    name: 'G-Concursos API',
-    version: '1.0.0',
+    name: 'E-Questões API',
+    version: '2.0.0',
     status: 'online',
   });
 });
@@ -163,6 +165,7 @@ app.use('/api/tutor', tutorRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/webhook', webhookRoutes);
+app.use('/api/flashcards', flashcardRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -186,7 +189,7 @@ app.use((err, req, res, next) => {
 
 // ─── START ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 G-Concursos API rodando na porta ${PORT}`);
+  console.log(`🚀 E-Questões API rodando na porta ${PORT}`);
   console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
 

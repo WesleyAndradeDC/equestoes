@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+  <!-- Ícone quadrado -->
+  <rect width="48" height="48" rx="10" fill="#2f456d"/>
+  <text x="24" y="34" font-family="Poppins, system-ui, sans-serif" font-size="28" font-weight="700" fill="#f26836" text-anchor="middle">E</text>
+  <!-- Nome do produto -->
+  <text x="62" y="22" font-family="Poppins, system-ui, sans-serif" font-size="18" font-weight="700" fill="#2f456d">E-Questões</text>
+  <text x="62" y="38" font-family="Poppins, system-ui, sans-serif" font-size="10" font-weight="400" fill="#4d4d4e">Plataforma de Estudos</text>
+</svg>
