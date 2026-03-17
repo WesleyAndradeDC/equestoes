@@ -4,12 +4,12 @@ import { syncUserSubscriptionCache } from '../utils/subscriptionUtils.js';
 // Mapeamento de product_ids para tipos de assinatura.
 // IMPORTANTE: cada ID deve aparecer em apenas UM plano.
 const PRODUCT_MAPPING = {
-  // Clube do Pedrão — acesso restrito a Português
-  'Aluno Clube do Pedrão':  [35416, 35418, 35413, 47507, 47485],
-  // Clube dos Cascas — acesso completo (inclui PRF 2026: 47818)
-  'Aluno Clube dos Cascas': [19479, 4252, 28237, 28239, 28240, 45748, 47818],
+  // Aluno Eleva — acesso restrito a Português
+  'Aluno Eleva':  [35416, 35418, 35413, 47507, 47485],
+  // Aluno Eleva — acesso completo (inclui PRF 2026: 47818)
+  'Aluno Eleva': [19479, 4252, 28237, 28239, 28240, 45748, 47818],
   // Banco do Brasil — acesso completo igual ao Cascas
-  'Aluno Banco do Brasil':  [47825],
+  'Aluno Eleva':  [47825],
 };
 
 /**
@@ -35,22 +35,22 @@ function identifySubscriptionType(lineItems) {
 
   // Prioridade: Cascas > BB > Pedrão (do acesso mais amplo para o mais restrito)
 
-  // 1. Clube dos Cascas — acesso total (inclui PRF 2026: 47818)
-  if (productIds.some(id => PRODUCT_MAPPING['Aluno Clube dos Cascas'].includes(id))) {
-    console.log('✅ Tipo identificado: Aluno Clube dos Cascas');
-    return 'Aluno Clube dos Cascas';
+  // 1. Aluno Eleva — acesso total (inclui PRF 2026: 47818)
+  if (productIds.some(id => PRODUCT_MAPPING['Aluno Eleva'].includes(id))) {
+    console.log('✅ Tipo identificado: Aluno Eleva');
+    return 'Aluno Eleva';
   }
 
   // 2. Banco do Brasil — acesso total igual ao Cascas (47825)
-  if (productIds.some(id => PRODUCT_MAPPING['Aluno Banco do Brasil'].includes(id))) {
-    console.log('✅ Tipo identificado: Aluno Banco do Brasil');
-    return 'Aluno Banco do Brasil';
+  if (productIds.some(id => PRODUCT_MAPPING['Aluno Eleva'].includes(id))) {
+    console.log('✅ Tipo identificado: Aluno Eleva');
+    return 'Aluno Eleva';
   }
 
-  // 3. Clube do Pedrão — acesso restrito a Português
-  if (productIds.some(id => PRODUCT_MAPPING['Aluno Clube do Pedrão'].includes(id))) {
-    console.log('✅ Tipo identificado: Aluno Clube do Pedrão');
-    return 'Aluno Clube do Pedrão';
+  // 3. Aluno Eleva — acesso restrito a Português
+  if (productIds.some(id => PRODUCT_MAPPING['Aluno Eleva'].includes(id))) {
+    console.log('✅ Tipo identificado: Aluno Eleva');
+    return 'Aluno Eleva';
   }
 
   console.log('⚠️ Nenhum product_id identificado');
@@ -250,7 +250,7 @@ export const woocommerceNewStudent = async (req, res) => {
       data: {
         email,
         full_name,
-        subscription_type: subscription_type || 'Aluno Clube do Pedrão',
+        subscription_type: subscription_type || 'Aluno Eleva',
         role: 'user',
         first_login: true,
         password_hash: null // Será definido no primeiro acesso
@@ -387,13 +387,13 @@ export const subscriptionWebhook = async (req, res) => {
 // Converte o nome do plano WC Memberships para o subscription_type interno.
 // ─────────────────────────────────────────────────────────────────────────────
 function _planNameToSubscriptionType(planName) {
-  if (!planName) return 'Aluno Clube do Pedrão';
+  if (!planName) return 'Aluno Eleva';
   const lower = planName.toLowerCase();
-  if (lower.includes('cascas'))                              return 'Aluno Clube dos Cascas';
-  if (lower.includes('banco do brasil') || lower.includes('bb')) return 'Aluno Banco do Brasil';
-  if (lower.includes('prf'))                                 return 'Aluno Clube dos Cascas'; // PRF acessa como Cascas
-  if (lower.includes('pedrão') || lower.includes('pedrao'))  return 'Aluno Clube do Pedrão';
-  return 'Aluno Clube do Pedrão'; // padrão seguro
+  if (lower.includes('cascas'))                              return 'Aluno Eleva';
+  if (lower.includes('banco do brasil') || lower.includes('bb')) return 'Aluno Eleva';
+  if (lower.includes('prf'))                                 return 'Aluno Eleva'; // PRF acessa como Cascas
+  if (lower.includes('pedrão') || lower.includes('pedrao'))  return 'Aluno Eleva';
+  return 'Aluno Eleva'; // padrão seguro
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -416,7 +416,7 @@ function _planNameToSubscriptionType(planName) {
 //   membership_status     → status bruto do WC Memberships
 //   membership_active     → true apenas quando status === "active"
 //   membership_expires_at → data de expiração (null = sem prazo)
-//   membership_plan       → nome do plano (ex.: "Clube dos Cascas")
+//   membership_plan       → nome do plano (ex.: "Aluno Eleva")
 // ─────────────────────────────────────────────────────────────────────────────
 export const membershipWebhook = async (req, res) => {
   try {
@@ -467,13 +467,13 @@ export const membershipWebhook = async (req, res) => {
     // Se o usuário não existir no banco → CRIA automaticamente.
     //
     // Requer no .env do Render:
-    //   WOO_SITE_URL        = https://gramatiquecursos.com
+    //   WOO_SITE_URL        = https://equestoes.com.br
     //   WOO_CONSUMER_KEY    = ck_xxxxxxxxxxxxxxxx
     //   WOO_CONSUMER_SECRET = cs_xxxxxxxxxxxxxxxx
     if (!user && payload?.customer_id) {
       if (process.env.WOO_CONSUMER_KEY && process.env.WOO_CONSUMER_SECRET) {
         try {
-          const site   = (process.env.WOO_SITE_URL ?? 'https://gramatiquecursos.com').replace(/\/$/, '');
+          const site   = (process.env.WOO_SITE_URL ?? 'https://equestoes.com.br').replace(/\/$/, '');
           const apiUrl = `${site}/wp-json/wc/v3/customers/${payload.customer_id}`;
           const auth   = Buffer.from(
             `${process.env.WOO_CONSUMER_KEY}:${process.env.WOO_CONSUMER_SECRET}`
@@ -603,7 +603,7 @@ export const membershipWebhook = async (req, res) => {
             user_id:          user.id,
             woo_order_id:     orderId,
             status,
-            subscription_type: planName ?? user.subscription_type ?? 'Aluno Clube do Pedrão',
+            subscription_type: planName ?? user.subscription_type ?? 'Aluno Eleva',
             started_at:        validStartDate ?? new Date(),
             expires_at:        validEndDate,
           },

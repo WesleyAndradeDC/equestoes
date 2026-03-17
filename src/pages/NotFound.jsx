@@ -10,8 +10,8 @@ export default function NotFound() {
         {/* Icon */}
         <div className="flex justify-center">
           <div className="relative">
-            <div className="w-32 h-32 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-              <AlertCircle className="w-16 h-16 text-purple-600 dark:text-purple-400" />
+            <div className="w-32 h-32 bg-[#2f456d] dark:bg-[#2f456d]/30 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-16 h-16 text-[#2f456d] dark:text-[#2f456d]" />
             </div>
             <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
               <span className="text-white font-bold">404</span>
@@ -32,7 +32,7 @@ export default function NotFound() {
         {/* Action */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link to="/">
-            <Button className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white hover:text-white px-8 py-3 rounded-lg font-medium flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all">
+            <Button className="w-full sm:w-auto bg-[#2f456d] hover:bg-[#2f456d] text-white hover:text-white px-8 py-3 rounded-lg font-medium flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all">
               <Home className="w-5 h-5" />
               Voltar para Início
             </Button>

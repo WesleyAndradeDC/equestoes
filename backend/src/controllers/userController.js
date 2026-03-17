@@ -3,8 +3,8 @@ import bcrypt from 'bcryptjs';
 
 // Valores válidos para subscription_type e role
 const VALID_SUBSCRIPTION_TYPES = [
-  'Aluno Clube do Pedrão',
-  'Aluno Clube dos Cascas',
+  'Aluno Eleva',
+  'Aluno Eleva',
   'Professor',
 ];
 const VALID_ROLES = ['user', 'admin'];
@@ -26,7 +26,7 @@ export const createUser = async (req, res) => {
     }
 
     // Validar subscription_type
-    const finalSubscriptionType = subscription_type || 'Aluno Clube do Pedrão';
+    const finalSubscriptionType = subscription_type || 'Aluno Eleva';
     if (!VALID_SUBSCRIPTION_TYPES.includes(finalSubscriptionType)) {
       return res.status(400).json({
         error: 'Tipo de assinatura inválido',

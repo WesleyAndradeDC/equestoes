@@ -38,7 +38,7 @@ function SubjectsDropdown({ subjects }) {
         <div className="relative">
           <button
             onClick={() => setOpen((v) => !v)}
-            className="flex items-center gap-0.5 text-xs text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700 px-2 py-1 rounded hover:bg-purple-100 dark:hover:bg-purple-800/40 transition-colors font-medium"
+            className="flex items-center gap-0.5 text-xs text-[#2f456d] dark:text-[#2f456d] bg-[#2f456d] dark:bg-[#2f456d]/30 border border-[#2f456d]/30 dark:border-[#2f456d]/30 px-2 py-1 rounded hover:bg-[#2f456d] dark:hover:bg-[#2f456d]/40 transition-colors font-medium"
           >
             +{rest.length}
             {open
@@ -138,8 +138,8 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
   const getOptionStyle = (letter) => {
     if (!isAnswered) {
       return selectedAnswer === letter
-        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30 shadow-md'
-        : 'border-slate-200 dark:border-slate-700 hover:border-purple-300 hover:bg-slate-50 dark:hover:bg-slate-800';
+        ? 'border-[#2f456d]/30 bg-[#2f456d] dark:bg-[#2f456d]/30 shadow-md'
+        : 'border-slate-200 dark:border-slate-700 hover:border-[#2f456d]/30 hover:bg-slate-50 dark:hover:bg-slate-800';
     }
 
     if (letter === question.correct_answer) {
@@ -210,7 +210,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
               <Badge className={`${difficultyColors[question.difficulty]} border font-medium`}>
                 {question.difficulty}
               </Badge>
-              <Badge variant="outline" className="bg-purple-50 dark:bg-purple-900/30 border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 font-medium">
+              <Badge variant="outline" className="bg-[#2f456d] dark:bg-[#2f456d]/30 border-[#2f456d]/30 dark:border-[#2f456d]/30 text-[#2f456d] dark:text-[#2f456d] font-medium">
                 {question.discipline}
               </Badge>
               {question.exam_board && (
@@ -237,9 +237,9 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
                 title={savedInNotebook ? 'Remover do caderno' : 'Salvar no caderno'}
               >
                 {savedInNotebook ? (
-                  <BookmarkCheck className="w-5 h-5 text-purple-600 fill-purple-600" />
+                  <BookmarkCheck className="w-5 h-5 text-[#2f456d] fill-[#2f456d]" />
                 ) : (
-                  <Bookmark className="w-5 h-5 text-slate-400 hover:text-purple-600" />
+                  <Bookmark className="w-5 h-5 text-slate-400 hover:text-[#2f456d]" />
                 )}
               </Button>
             )}
@@ -329,7 +329,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
               }`}
             >
               <div className="flex items-start gap-3">
-                <span className="font-bold text-purple-700 dark:text-purple-400 shrink-0">{option.letter})</span>
+                <span className="font-bold text-[#2f456d] dark:text-[#2f456d] shrink-0">{option.letter})</span>
                 <span
                   className="text-slate-700 dark:text-slate-200 flex-1"
                   dangerouslySetInnerHTML={{ __html: option.text }}
@@ -351,7 +351,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
           <Button
             onClick={handleSubmit}
             disabled={!selectedAnswer || isSubmitting}
-            className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:text-white shadow-md"
+            className="w-full bg-gradient-to-r from-[#2f456d] to-[#1a2d4a] hover:from-[#2f456d] hover:to-[#1a2d4a] text-white hover:text-white shadow-md"
           >
             {isSubmitting ? 'Enviando...' : 'Confirmar Resposta'}
           </Button>
@@ -359,8 +359,8 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
       )}
 
       {showExplanation && (
-        <CardFooter className="flex-col items-start space-y-3 bg-purple-50/50 dark:bg-purple-900/20 border-t border-purple-200 dark:border-purple-700">
-          <div className="flex items-center gap-2 text-purple-900 dark:text-purple-200">
+        <CardFooter className="flex-col items-start space-y-3 bg-[#2f456d]/50 dark:bg-[#2f456d]/20 border-t border-[#2f456d]/30 dark:border-[#2f456d]/30">
+          <div className="flex items-center gap-2 text-[#2f456d] dark:text-[#2f456d]">
             <Lightbulb className="w-5 h-5" />
             <h4 className="font-semibold">Comentário do Professor</h4>
           </div>
@@ -375,7 +375,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
       <CardFooter className="border-t border-slate-200 dark:border-slate-700">
         <Button
           variant="ghost"
-          className="w-full text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400"
+          className="w-full text-slate-600 dark:text-slate-300 hover:text-[#2f456d] dark:hover:text-[#2f456d]"
           onClick={() => setShowComments(!showComments)}
         >
           <MessageCircle className="w-4 h-4 mr-2" />

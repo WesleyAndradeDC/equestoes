@@ -49,7 +49,7 @@ export const register = async (req, res) => {
         email,
         password_hash,
         full_name,
-        subscription_type: subscription_type || 'Aluno Clube do Pedrão',
+        subscription_type: subscription_type || 'Aluno Eleva',
         role: 'user'
       },
       select: {
@@ -212,9 +212,9 @@ export const checkEmail = async (req, res) => {
     if (!user) {
       return res.status(404).json({ 
         error: 'Email não encontrado',
-        message: 'A plataforma G-Concursos é exclusiva para alunos do Gramatique Clube do Pedrão e Clube dos Cascas.',
+        message: 'A plataforma E-Questões é exclusiva para alunos cadastrados.',
         action: 'join',
-        joinUrl: 'https://gramatiquecursos.com/'
+        joinUrl: 'https://equestoes.com.br/'
       });
     }
 

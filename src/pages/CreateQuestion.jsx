@@ -146,7 +146,7 @@ export default function CreateQuestion() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 dark:from-white dark:to-white bg-clip-text text-transparent">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#2f456d] to-[#1a2d4a] dark:from-white dark:to-white bg-clip-text text-transparent">
           Criar Nova Questão
         </h1>
         <p className="text-slate-600 dark:text-slate-400">
@@ -154,10 +154,10 @@ export default function CreateQuestion() {
         </p>
       </div>
 
-      <Card className="bg-white/90 text-card-foreground rounded-none border dark:bg-purple-900/90 backdrop-blur-sm shadow-lg border-slate-200 dark:border-purple-700">
+      <Card className="bg-white/90 text-card-foreground rounded-none border dark:bg-[#2f456d]/90 backdrop-blur-sm shadow-lg border-slate-200 dark:border-[#2f456d]/30">
         <CardHeader className="bg-slate-50 p-6 flex flex-col space-y-1.5">
           <CardTitle className="flex items-center gap-2 dark:text-white">
-            <Plus className="w-5 h-5 text-purple-600 dark:text-white" />
+            <Plus className="w-5 h-5 text-[#2f456d] dark:text-white" />
             Informações da Questão
           </CardTitle>
         </CardHeader>
@@ -271,7 +271,7 @@ export default function CreateQuestion() {
                 /* Múltipla Escolha: A até E */
                 ['a', 'b', 'c', 'd', 'e'].map((letter) => (
                   <div key={letter} className="flex gap-2 items-center">
-                    <span className="font-bold text-purple-700 dark:text-white w-8">{letter.toUpperCase()})</span>
+                    <span className="font-bold text-[#2f456d] dark:text-white w-8">{letter.toUpperCase()})</span>
                     <Input
                       value={formData[`option_${letter}`]}
                       onChange={(e) => handleChange(`option_${letter}`, e.target.value)}
@@ -324,7 +324,7 @@ export default function CreateQuestion() {
             </div>
 
             <Button
-              type="submit" className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 w-full hover:bg-purple-700"
+              type="submit" className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 w-full hover:bg-[#2f456d]"
 
               disabled={createQuestionMutation.isPending}>
 

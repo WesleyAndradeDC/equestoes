@@ -1,5 +1,5 @@
 // ============================================================
-// G-CONCURSOS — Prisma Schema
+// E-QUESTÕES — Prisma Schema
 // PostgreSQL · Prisma ORM
 // ============================================================
 
@@ -23,7 +23,7 @@ model User {
   role                String   @default("user")         // "user" | "admin"
 
   // ── Assinatura — WooCommerce Subscriptions ───────────────
-  subscription_type   String?  // "Aluno Clube do Pedrão" | "Aluno Clube dos Cascas" | "Professor"
+  subscription_type   String?  // "Aluno Eleva" | "Aluno Eleva" | "Professor"
   subscription_status String   @default("inactive")
   // Valores: active | pending-cancel | on-hold | cancelled | expired | pending | inactive
   subscription_active Boolean  @default(false)
@@ -34,7 +34,7 @@ model User {
   membership_active     Boolean   @default(false)
   // true quando membership_status === "active"
   membership_expires_at DateTime? // Data de expiração da associação (null = sem prazo)
-  membership_plan       String?   // Nome do plano (ex.: "Clube dos Cascas")
+  membership_plan       String?   // Nome do plano (ex.: "Aluno Eleva")
 
   first_login         Boolean  @default(true)  // true = precisa definir senha
   study_streak        Int      @default(0)
@@ -68,7 +68,7 @@ model Subscription {
   status            String  @default("inactive")
   // Valores: active | pending-cancel | on-hold | cancelled | expired | pending | inactive
   subscription_type String?
-  // "Aluno Clube do Pedrão" | "Aluno Clube dos Cascas"
+  // "Aluno Eleva" | "Aluno Eleva"
 
   // ── IDs externos WooCommerce ──────────────────────────────
   woo_subscription_id String? @unique  // ID da subscription no WooCommerce Subscriptions

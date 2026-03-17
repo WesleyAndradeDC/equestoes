@@ -1,7 +1,7 @@
 {
-  "name": "g-concursos-backend",
+  "name": "e-questoes-backend",
   "version": "1.0.0",
-  "description": "Backend API for G-Concursos Gramatique",
+  "description": "Backend API for G-Concursos E-Questões",
   "main": "src/index.js",
   "type": "module",
   "scripts": {

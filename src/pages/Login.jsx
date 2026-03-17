@@ -98,7 +98,7 @@ export default function Login() {
         <CardHeader className="space-y-4 text-center pb-4">
           <div className="flex justify-center">
             <img
-              src="/logo.svg"
+              src="https://i.ibb.co/cXDpz7zg/eleva-png.png"
               alt="E-Questões"
               className="h-16 w-auto object-contain"
             />

@@ -17,7 +17,7 @@ export default function ETutory() {
   useEffect(() => {
     base44.auth.me().then((u) => {
       setUser(u);
-      const allowedProfiles = ['Professor', 'Aluno Clube dos Cascas'];
+      const allowedProfiles = ['Professor', 'Aluno Eleva'];
       const isAllowed = u.role === 'admin' || allowedProfiles.includes(u.subscription_type);
       setHasAccess(isAllowed);
     }).catch(() => {
@@ -95,7 +95,7 @@ Seja didático, use exemplos práticos e responda de forma clara e objetiva. Res
         </div>
         <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Acesso Restrito</h1>
         <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-          O <strong>E-Tutory</strong> está disponível apenas para alunos do plano <strong>Cascas</strong> e <strong>Professores</strong>.
+          O <strong>E-Tutory</strong> está disponível apenas para alunos do plano <strong>Aluno Eleva</strong> e <strong>Professores</strong>.
         </p>
         <p className="text-sm text-slate-500">Entre em contato para fazer upgrade do seu plano.</p>
       </div>

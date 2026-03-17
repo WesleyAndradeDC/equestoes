@@ -12,7 +12,6 @@ export default function TutorChatPopup() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [conversation, setConversation] = useState(null);
   const [user, setUser] = useState(null);
   const [hasAccess, setHasAccess] = useState(false);
   const messagesEndRef = useRef(null);
@@ -20,8 +19,7 @@ export default function TutorChatPopup() {
   useEffect(() => {
     base44.auth.me().then((u) => {
       setUser(u);
-      // Verificar acesso: admin, Professor ou Aluno Clube dos Cascas
-      const allowedProfiles = ['Professor', 'Aluno Clube dos Cascas'];
+      const allowedProfiles = ['Professor', 'Aluno Eleva'];
       const isAllowed = u.role === 'admin' || allowedProfiles.includes(u.subscription_type);
       setHasAccess(isAllowed);
     }).catch(() => {});
@@ -32,7 +30,7 @@ export default function TutorChatPopup() {
   }, [messages]);
 
   const buildPrompt = (history, newMessage) => {
-    const systemPrompt = `Você é o Tutor Gramatique, um assistente especializado em TODAS as matérias de concursos públicos brasileiros. Seu papel é:
+    const systemPrompt = `Você é o E-Tutory, assistente de IA da plataforma E-Questões, especializado em TODAS as matérias de concursos públicos brasileiros. Seu papel é:
 
 1. Responder dúvidas sobre Língua Portuguesa (gramática, ortografia, interpretação de texto, redação)
 2. Ajudar com Matemática e Raciocínio Lógico
@@ -43,11 +41,11 @@ export default function TutorChatPopup() {
 
 Seja didático, use exemplos práticos e responda de forma clara e objetiva. Responda sempre em português brasileiro.`;
 
-    let conversationHistory = history.map(msg => 
-      `${msg.role === 'user' ? 'Aluno' : 'Tutor'}: ${msg.content}`
+    const conversationHistory = history.map(msg =>
+      `${msg.role === 'user' ? 'Aluno' : 'E-Tutory'}: ${msg.content}`
     ).join('\n\n');
 
-    return `${systemPrompt}\n\n${conversationHistory ? conversationHistory + '\n\n' : ''}Aluno: ${newMessage}\n\nTutor:`;
+    return `${systemPrompt}\n\n${conversationHistory ? conversationHistory + '\n\n' : ''}Aluno: ${newMessage}\n\nE-Tutory:`;
   };
 
   const handleSendMessage = async () => {
@@ -61,29 +59,20 @@ Seja didático, use exemplos práticos e responda de forma clara e objetiva. Res
 
     try {
       const prompt = buildPrompt(messages, userMessage);
-      
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: prompt
-      });
-
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: response 
-      }]);
+      const response = await base44.integrations.Core.InvokeLLM({ prompt });
+      setMessages(prev => [...prev, { role: 'assistant', content: response }]);
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: 'Desculpe, ocorreu um erro. Por favor, tente novamente.' 
+      console.error('E-Tutory error:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Desculpe, ocorreu um erro. Por favor, tente novamente.',
       }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!user || !hasAccess) {
-    return null;
-  }
+  if (!user || !hasAccess) return null;
 
   return (
     <>
@@ -91,27 +80,27 @@ Seja didático, use exemplos práticos e responda de forma clara e objetiva. Res
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-24 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group"
+          className="fixed bottom-24 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-[#2f456d] to-[#1a2d4a] text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group"
         >
           <MessageCircle className="w-6 h-6" />
           <span className="absolute -top-10 right-0 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            Tutor Gramatique
+            E-Tutory IA
           </span>
         </button>
       )}
 
       {/* Popup do Chat */}
       {isOpen && (
-        <Card className={`fixed z-50 bg-white dark:bg-slate-900 shadow-2xl border-purple-200 dark:border-purple-700 transition-all ${
-          isMinimized 
-            ? 'bottom-24 right-6 w-72 h-14' 
+        <Card className={`fixed z-50 bg-white dark:bg-slate-900 shadow-2xl border-[#2f456d]/30 dark:border-[#2f456d]/50 transition-all ${
+          isMinimized
+            ? 'bottom-24 right-6 w-72 h-14'
             : 'bottom-24 right-6 w-96 h-[500px] max-h-[70vh]'
         }`}>
           {/* Header */}
-          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-t-lg">
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#2f456d] to-[#1a2d4a] text-white rounded-t-lg">
             <div className="flex items-center gap-2">
-              <Bot className="w-5 h-5" />
-              <span className="font-semibold">Tutor Gramatique</span>
+              <Bot className="w-5 h-5 text-[#f26836]" />
+              <span className="font-semibold">E-Tutory</span>
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -135,26 +124,26 @@ Seja didático, use exemplos práticos e responda de forma clara e objetiva. Res
               <div className="flex-1 overflow-y-auto p-4 space-y-4 h-[calc(100%-120px)]">
                 {messages.length === 0 && (
                   <div className="text-center text-slate-500 dark:text-slate-400 py-8">
-                    <Bot className="w-12 h-12 mx-auto mb-3 text-purple-400" />
-                    <p className="font-medium">Olá! Sou o Tutor Gramatique.</p>
+                    <Bot className="w-12 h-12 mx-auto mb-3 text-[#f26836]" />
+                    <p className="font-medium">Olá! Sou o E-Tutory.</p>
                     <p className="text-sm mt-1">Como posso ajudar com seus estudos para concursos?</p>
                   </div>
                 )}
-                
+
                 {messages.map((msg, idx) => (
                   <div
                     key={idx}
                     className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     {msg.role === 'assistant' && (
-                      <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center shrink-0">
-                        <Bot className="w-4 h-4 text-purple-600 dark:text-purple-300" />
+                      <div className="w-7 h-7 rounded-full bg-[#2f456d]/10 flex items-center justify-center shrink-0">
+                        <Bot className="w-4 h-4 text-[#2f456d]" />
                       </div>
                     )}
                     <div
                       className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                         msg.role === 'user'
-                          ? 'bg-purple-600 text-white'
+                          ? 'bg-[#2f456d] text-white'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100'
                       }`}
                     >
@@ -173,14 +162,14 @@ Seja didático, use exemplos práticos e responda de forma clara e objetiva. Res
                     )}
                   </div>
                 ))}
-                
+
                 {isLoading && (
                   <div className="flex gap-2 justify-start">
-                    <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                      <Bot className="w-4 h-4 text-purple-600 dark:text-purple-300" />
+                    <div className="w-7 h-7 rounded-full bg-[#2f456d]/10 flex items-center justify-center">
+                      <Bot className="w-4 h-4 text-[#2f456d]" />
                     </div>
                     <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                      <Loader2 className="w-4 h-4 animate-spin text-[#2f456d]" />
                     </div>
                   </div>
                 )}
@@ -201,7 +190,7 @@ Seja didático, use exemplos práticos e responda de forma clara e objetiva. Res
                   <Button
                     onClick={handleSendMessage}
                     disabled={isLoading || !inputMessage.trim()}
-                    className="bg-purple-600 hover:bg-purple-700 text-white hover:text-white"
+                    className="bg-[#f26836] hover:bg-[#d9561f] text-white"
                   >
                     <Send className="w-4 h-4" />
                   </Button>

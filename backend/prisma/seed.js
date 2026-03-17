@@ -67,12 +67,12 @@ async function main() {
       password_hash: alunoHash,
       full_name: 'Ana Paula Ferreira',
       role: 'user',
-      subscription_type: 'Aluno Clube dos Cascas',
+      subscription_type: 'Aluno Eleva',
       subscription_status: 'active',
       subscription_active: true,
       membership_status: 'active',
       membership_active: true,
-      membership_plan: 'Clube dos Cascas',
+      membership_plan: 'Aluno Eleva',
       first_login: false,
       study_streak: 12,
       last_study_date: new Date().toISOString().split('T')[0],
@@ -87,12 +87,12 @@ async function main() {
       password_hash: alunoHash,
       full_name: 'Bruno Oliveira',
       role: 'user',
-      subscription_type: 'Aluno Clube do Pedrão',
+      subscription_type: 'Aluno Eleva',
       subscription_status: 'active',
       subscription_active: true,
       membership_status: 'active',
       membership_active: true,
-      membership_plan: 'Clube do Pedrão',
+      membership_plan: 'Aluno Eleva',
       first_login: false,
       study_streak: 3,
       last_study_date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
@@ -108,7 +108,7 @@ async function main() {
     create: {
       user_id: alunoCascas.id,
       status: 'active',
-      subscription_type: 'Aluno Clube dos Cascas',
+      subscription_type: 'Aluno Eleva',
       woo_subscription_id: 'WC-1001',
       started_at: new Date(Date.now() - 30 * 86400000),
       expires_at: new Date(Date.now() + 335 * 86400000),
@@ -121,7 +121,7 @@ async function main() {
     create: {
       user_id: alunoPedrao.id,
       status: 'active',
-      subscription_type: 'Aluno Clube do Pedrão',
+      subscription_type: 'Aluno Eleva',
       woo_subscription_id: 'WC-1002',
       started_at: new Date(Date.now() - 15 * 86400000),
       expires_at: new Date(Date.now() + 350 * 86400000),
@@ -512,7 +512,7 @@ async function main() {
       {
         question_id: q1.id, user_id: alunoCascas.id,
         text: 'Ótima questão! A pegadinha da alternativa B é clássica do CESPE — usar crase antes de substantivo que não admite artigo.',
-        author_name: 'Ana Paula Ferreira', author_role: 'Aluno Clube dos Cascas',
+        author_name: 'Ana Paula Ferreira', author_role: 'Aluno Eleva',
       },
       {
         question_id: q1.id, user_id: professor.id,
@@ -522,7 +522,7 @@ async function main() {
       {
         question_id: q5.id, user_id: alunoCascas.id,
         text: 'Quase errei! É uma armadilha comum pensar que 20% de aumento + 20% de desconto resultam no valor original.',
-        author_name: 'Ana Paula Ferreira', author_role: 'Aluno Clube dos Cascas',
+        author_name: 'Ana Paula Ferreira', author_role: 'Aluno Eleva',
       },
       {
         question_id: q8.id, user_id: professor.id,
@@ -532,7 +532,7 @@ async function main() {
       {
         question_id: q13.id, user_id: alunoCascas.id,
         text: 'Confundi MitM com Phishing. A diferença é que Phishing engana o usuário para entregar credenciais voluntariamente.',
-        author_name: 'Ana Paula Ferreira', author_role: 'Aluno Clube dos Cascas',
+        author_name: 'Ana Paula Ferreira', author_role: 'Aluno Eleva',
       },
     ],
   });

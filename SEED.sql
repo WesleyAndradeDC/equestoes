@@ -99,24 +99,24 @@ VALUES
    'active', true, 'Professor',
    false, 7, CURRENT_DATE::text, NOW()),
 
-  -- Aluno Clube dos Cascas (acesso total + E-Tutory)
+  -- Aluno Eleva (acesso total + E-Tutory)
   (v_cascas_id,
    'aluno@equestoes.com',
    crypt('Aluno@123', gen_salt('bf', 10)),
    'Ana Paula Ferreira',
    'user',
-   'Aluno Clube dos Cascas', 'active', true,
-   'active', true, 'Clube dos Cascas',
+   'Aluno Eleva', 'active', true,
+   'active', true, 'Aluno Eleva',
    false, 12, CURRENT_DATE::text, NOW()),
 
-  -- Aluno Clube do Pedrão (acesso restrito a Português)
+  -- Aluno Eleva (acesso restrito a Português)
   (v_pedrao_id,
    'aluno.pedrao@equestoes.com',
    crypt('Aluno@123', gen_salt('bf', 10)),
    'Bruno Oliveira',
    'user',
-   'Aluno Clube do Pedrão', 'active', true,
-   'active', true, 'Clube do Pedrão',
+   'Aluno Eleva', 'active', true,
+   'active', true, 'Aluno Eleva',
    false, 3, (CURRENT_DATE - INTERVAL '1 day')::text, NOW());
 
 RAISE NOTICE '✅ Usuários criados';
@@ -125,10 +125,10 @@ RAISE NOTICE '✅ Usuários criados';
 INSERT INTO subscriptions (id, user_id, status, subscription_type,
   woo_subscription_id, started_at, expires_at, updated_at)
 VALUES
-  (gen_random_uuid(), v_cascas_id, 'active', 'Aluno Clube dos Cascas',
+  (gen_random_uuid(), v_cascas_id, 'active', 'Aluno Eleva',
    'WC-1001', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days', NOW()),
 
-  (gen_random_uuid(), v_pedrao_id, 'active', 'Aluno Clube do Pedrão',
+  (gen_random_uuid(), v_pedrao_id, 'active', 'Aluno Eleva',
    'WC-1002', NOW() - INTERVAL '15 days', NOW() + INTERVAL '350 days', NOW());
 
 RAISE NOTICE '✅ Assinaturas criadas';
@@ -511,7 +511,7 @@ INSERT INTO comments (id, question_id, user_id, text, author_name, author_role)
 VALUES
   (gen_random_uuid(), v_q1, v_cascas_id,
    'Ótima questão! A pegadinha da alternativa B é clássica do CESPE — usar crase antes de substantivo que não admite artigo.',
-   'Ana Paula Ferreira', 'Aluno Clube dos Cascas'),
+   'Ana Paula Ferreira', 'Aluno Eleva'),
 
   (gen_random_uuid(), v_q1, v_professor_id,
    'Excelente observação, Ana! Lembrem-se: para usar crase, precisamos da preposição "a" + artigo "a" ou pronome demonstrativo "aquele/aquela/aquilo". Testem substituindo pelo masculino — se aparecer "ao", é crase.',
@@ -519,7 +519,7 @@ VALUES
 
   (gen_random_uuid(), v_q5, v_cascas_id,
    'Quase errei essa! É uma armadilha muito comum pensar que 20% de aumento + 20% de desconto resultam no valor original.',
-   'Ana Paula Ferreira', 'Aluno Clube dos Cascas'),
+   'Ana Paula Ferreira', 'Aluno Eleva'),
 
   (gen_random_uuid(), v_q8, v_professor_id,
    'Questão muito cobrada em provas de Analista Jurídico. Dominem os remédios constitucionais: HC, MS, MI, HD e AP. Cada um tem seu objeto específico!',
@@ -527,7 +527,7 @@ VALUES
 
   (gen_random_uuid(), v_q13, v_cascas_id,
    'Confundi MitM com Phishing inicialmente. A diferença é que o Phishing engana o usuário para que ele entregue suas credenciais voluntariamente.',
-   'Ana Paula Ferreira', 'Aluno Clube dos Cascas');
+   'Ana Paula Ferreira', 'Aluno Eleva');
 
 RAISE NOTICE '✅ Comentários criados';
 

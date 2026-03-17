@@ -128,7 +128,7 @@ export const handleSubscriptionWebhook = async (req, res) => {
         data: {
           email,
           full_name,
-          subscription_type:   subscription_type ?? 'Aluno Clube do Pedrão',
+          subscription_type:   subscription_type ?? 'Aluno Eleva',
           subscription_status: mappedStatus,
           role:                'user',
           first_login:         true,
@@ -196,7 +196,7 @@ export const handleSubscriptionWebhook = async (req, res) => {
           status:           mappedStatus,
           subscription_type: subscription_type
             ?? user.subscription_type
-            ?? 'Aluno Clube do Pedrão',
+            ?? 'Aluno Eleva',
           started_at,
           expires_at,
           next_payment_at,

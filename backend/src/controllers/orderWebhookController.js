@@ -231,7 +231,7 @@ async function _processLegacyPayload({ email, full_name, subscription_type }, re
     data: {
       email,
       full_name,
-      subscription_type:   subscription_type ?? 'Aluno Clube do Pedrão',
+      subscription_type:   subscription_type ?? 'Aluno Eleva',
       subscription_status: 'active',
       role:        'user',
       first_login: true,

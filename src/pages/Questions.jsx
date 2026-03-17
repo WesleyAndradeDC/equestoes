@@ -37,7 +37,7 @@ export default function Questions() {
   }, []);
 
   // Check user subscription type
-  const isRestrictedUser = user?.subscription_type === 'Aluno Clube do Pedrão';
+  const isRestrictedUser = false;
 
   const { data: questions = [], isLoading: questionsLoading, error: questionsError } = useQuery({
     queryKey: ['questions'],
@@ -263,7 +263,7 @@ export default function Questions() {
   if (questionsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#2f456d] animate-spin" />
         <p className="ml-3 text-slate-600">Carregando questões...</p>
       </div>
     );
@@ -282,7 +282,7 @@ export default function Questions() {
           </p>
           <Button 
             onClick={() => window.location.reload()} 
-            className="mt-4 bg-purple-600 hover:bg-purple-700 text-white hover:text-white"
+            className="mt-4 bg-[#2f456d] hover:bg-[#1a2d4a] text-white hover:text-white"
           >
             Tentar Novamente
           </Button>
@@ -295,17 +295,12 @@ export default function Questions() {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 dark:from-white dark:to-white bg-clip-text text-transparent">
+        <h1 className="text-3xl md:text-4xl font-bold text-[#2f456d] dark:text-white">
           {currentNotebook ? `Caderno: ${currentNotebook.name}` : 'Resolver Questões'}
         </h1>
         <p className="text-slate-600 dark:text-slate-400">
           {filteredQuestions.length} questões disponíveis
         </p>
-        {isRestrictedUser && (
-          <p className="text-sm text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-900/30 px-4 py-2 rounded-lg inline-block">
-            🔒 Plano Clube do Pedrão: Acesso apenas a questões de Português
-          </p>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -388,7 +383,7 @@ export default function Questions() {
                             variant={currentPage === pageNum ? 'default' : 'outline'}
                             className={`w-10 h-10 ${
                               currentPage === pageNum
-                                ? 'bg-purple-600 hover:bg-purple-700 text-white hover:text-white'
+                                ? 'bg-[#2f456d] hover:bg-[#1a2d4a] text-white hover:text-white'
                                 : ''
                             }`}
                           >
@@ -426,7 +421,7 @@ export default function Questions() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <BookmarkPlus className="w-5 h-5 text-purple-600 dark:text-white" />
+              <BookmarkPlus className="w-5 h-5 text-[#2f456d] dark:text-white" />
               Salvar Questão em Caderno
             </DialogTitle>
           </DialogHeader>
@@ -469,7 +464,7 @@ export default function Questions() {
             <Button
               onClick={() => handleSaveToNotebook(savingQuestionId)}
               disabled={!selectedNotebook && !newNotebookName}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white hover:text-white"
+              className="w-full bg-[#2f456d] hover:bg-[#1a2d4a] text-white hover:text-white"
             >
               Salvar Questão
             </Button>

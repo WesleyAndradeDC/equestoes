@@ -129,7 +129,7 @@ export default function ReviewQuestion() {
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
           <Edit3 className="text-slate-50 lucide lucide-pen-line w-10 h-10" />
-          <h1 className="bg-clip-text text-slate-50 text-3xl font-bold md:text-4xl from-purple-600 to-purple-700">Revisão de Questões
+          <h1 className="bg-clip-text text-slate-50 text-3xl font-bold md:text-4xl from-[#2f456d] to-[#1a2d4a]">Revisão de Questões
 
           </h1>
         </div>
@@ -142,7 +142,7 @@ export default function ReviewQuestion() {
       <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg border-slate-200 dark:border-slate-700">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 dark:text-slate-100">
-            <Search className="w-5 h-5 text-purple-600" />
+            <Search className="w-5 h-5 text-[#2f456d]" />
             Buscar Questão
           </CardTitle>
         </CardHeader>
@@ -157,7 +157,7 @@ export default function ReviewQuestion() {
 
             <Button
               onClick={handleSearch}
-              disabled={isSearching} className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 hover:bg-purple-700">
+              disabled={isSearching} className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 hover:bg-[#2f456d]">
 
 
               {isSearching ?
@@ -177,10 +177,10 @@ export default function ReviewQuestion() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 dark:text-slate-100">
-                <Edit3 className="w-5 h-5 text-purple-600" />
+                <Edit3 className="w-5 h-5 text-[#2f456d]" />
                 Editar Questão
               </CardTitle>
-              <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+              <Badge className="bg-[#2f456d] text-[#2f456d] dark:bg-[#2f456d]/50 dark:text-[#2f456d]">
                 #{editedQuestion.code}
               </Badge>
             </div>

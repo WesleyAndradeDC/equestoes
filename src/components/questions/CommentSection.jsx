@@ -52,7 +52,7 @@ export default function CommentSection({ questionId, canComment = false }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-        <MessageCircle className="w-5 h-5 text-purple-600" />
+        <MessageCircle className="w-5 h-5 text-[#2f456d]" />
         <h4 className="font-semibold">Comentários ({comments.length})</h4>
       </div>
 
@@ -69,7 +69,7 @@ export default function CommentSection({ questionId, canComment = false }) {
             <Button
               onClick={handleSubmit}
               disabled={!newComment.trim() || createCommentMutation.isPending}
-              className="bg-purple-600 hover:bg-purple-700 text-white hover:text-white"
+              className="bg-[#2f456d] hover:bg-[#2f456d] text-white hover:text-white"
             >
               {createCommentMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -90,7 +90,7 @@ export default function CommentSection({ questionId, canComment = false }) {
       <div className="space-y-3">
         {isLoading ? (
           <div className="flex justify-center py-6">
-            <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+            <Loader2 className="w-6 h-6 text-[#2f456d] animate-spin" />
           </div>
         ) : comments.length === 0 ? (
           <p className="text-center text-slate-500 dark:text-slate-400 py-6">
@@ -102,7 +102,7 @@ export default function CommentSection({ questionId, canComment = false }) {
               key={comment.id}
               className={`p-4 rounded-lg border-2 transition-all ${
                 isProfessor(comment.author_role)
-                  ? 'bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-300 dark:border-purple-600'
+                  ? 'bg-gradient-to-r from-[#2f456d] to-indigo-50 dark:from-[#2f456d]/30 dark:to-indigo-900/30 border-[#2f456d]/30 dark:border-[#2f456d]/30'
                   : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
               }`}
             >
@@ -110,7 +110,7 @@ export default function CommentSection({ questionId, canComment = false }) {
                 <div className="flex items-center gap-2">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                     isProfessor(comment.author_role)
-                      ? 'bg-purple-600 text-white'
+                      ? 'bg-[#2f456d] text-white'
                       : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                   }`}>
                     {isProfessor(comment.author_role) ? (
@@ -123,13 +123,13 @@ export default function CommentSection({ questionId, canComment = false }) {
                     <div className="flex items-center gap-2">
                       <span className={`font-medium text-sm ${
                         isProfessor(comment.author_role)
-                          ? 'text-purple-900 dark:text-purple-200'
+                          ? 'text-[#2f456d] dark:text-[#2f456d]'
                           : 'text-slate-700 dark:text-slate-200'
                       }`}>
                         {comment.author_name}
                       </span>
                       {isProfessor(comment.author_role) && (
-                        <Badge className="bg-purple-600 text-white text-xs">
+                        <Badge className="bg-[#2f456d] text-white text-xs">
                           Professor ✓
                         </Badge>
                       )}
@@ -142,7 +142,7 @@ export default function CommentSection({ questionId, canComment = false }) {
               </div>
               <p className={`text-sm leading-relaxed ${
                 isProfessor(comment.author_role)
-                  ? 'text-purple-800 dark:text-purple-100'
+                  ? 'text-[#2f456d] dark:text-[#2f456d]'
                   : 'text-slate-600 dark:text-slate-300'
               }`}>
                 {comment.text}

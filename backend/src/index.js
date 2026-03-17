@@ -55,8 +55,8 @@ const allowedOrigins = [
   'http://localhost:5174',
   'https://e-questoes-frontend.onrender.com',
   'https://gconcursos-frontend.onrender.com',
-  'https://www.app.gramatiquecursos.com',
-  'https://app.gramatiquecursos.com',
+  'https://www.app.equestoes.com.br',
+  'https://app.equestoes.com.br',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 

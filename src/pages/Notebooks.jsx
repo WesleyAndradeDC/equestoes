@@ -17,7 +17,7 @@ const COLORS = {
   yellow: { bg: 'bg-yellow-100', border: 'border-yellow-300', text: 'text-yellow-900' },
   green: { bg: 'bg-green-100', border: 'border-green-300', text: 'text-green-900' },
   red: { bg: 'bg-red-100', border: 'border-red-300', text: 'text-red-900' },
-  purple: { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-900' },
+  purple: { bg: 'bg-[#2f456d]', border: 'border-[#2f456d]/30', text: 'text-[#2f456d]' },
   orange: { bg: 'bg-orange-100', border: 'border-orange-300', text: 'text-orange-900' }
 };
 
@@ -76,7 +76,7 @@ export default function Notebooks() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 dark:from-white dark:to-white bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#2f456d] to-[#1a2d4a] dark:from-white dark:to-white bg-clip-text text-transparent">
             Meus Cadernos
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2">
@@ -86,7 +86,7 @@ export default function Notebooks() {
 
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-9 from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:text-white shadow-md">
+            <Button className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-9 from-[#2f456d] to-[#1a2d4a] hover:from-[#2f456d] hover:to-[#1a2d4a] text-white hover:text-white shadow-md">
               <Plus className="w-4 h-4 mr-2" />
               Novo Caderno
             </Button>
@@ -133,7 +133,7 @@ export default function Notebooks() {
                 </Select>
               </div>
 
-              <Button onClick={handleCreate} className="w-full bg-purple-600 hover:bg-purple-700 text-white hover:text-white">
+              <Button onClick={handleCreate} className="w-full bg-[#2f456d] hover:bg-[#2f456d] text-white hover:text-white">
                 Criar Caderno
               </Button>
             </div>
@@ -154,7 +154,7 @@ export default function Notebooks() {
             </div>
             <Button
             onClick={() => setShowCreateDialog(true)}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:text-white">
+            className="bg-gradient-to-r from-[#2f456d] to-[#1a2d4a] hover:from-[#2f456d] hover:to-[#1a2d4a] text-white hover:text-white">
 
               <Plus className="w-4 h-4 mr-2" />
               Criar Primeiro Caderno
@@ -192,7 +192,7 @@ export default function Notebooks() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <BookOpen className="w-5 h-5 text-slate-400" />
-                      <span className="text-2xl font-bold text-purple-700 dark:text-white">
+                      <span className="text-2xl font-bold text-[#2f456d] dark:text-white">
                         {questionCount}
                       </span>
                     </div>

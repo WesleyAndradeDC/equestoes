@@ -47,9 +47,8 @@ import reportService from '@/services/reportService';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const SUBSCRIPTION_OPTIONS = [
-  { value: 'Aluno Clube do Pedrão',   label: '🟡 Aluno Clube do Pedrão' },
-  { value: 'Aluno Clube dos Cascas',  label: '🟢 Aluno Clube dos Cascas' },
-  { value: 'Professor',               label: '🔵 Professor' },
+  { value: 'Aluno Eleva',  label: '🟢 Aluno Eleva' },
+  { value: 'Professor',    label: '🔵 Professor' },
 ];
 
 const ROLE_OPTIONS = [
@@ -58,9 +57,8 @@ const ROLE_OPTIONS = [
 ];
 
 const SUBSCRIPTION_BADGE = {
-  'Aluno Clube dos Cascas':  'bg-green-100 text-green-700 border-green-300',
-  'Aluno Clube do Pedrão':   'bg-amber-100 text-amber-700 border-amber-300',
-  'Professor':               'bg-blue-100 text-blue-700 border-blue-300',
+  'Aluno Eleva': 'bg-blue-100 text-blue-700 border-blue-300',
+  'Professor':   'bg-[#2f456d]/10 text-[#2f456d] border-[#2f456d]/30',
 };
 
 const REPORT_STATUS_CONFIG = {
@@ -84,7 +82,7 @@ function UserFormDialog({ open, onOpenChange, onSubmit, loading, editUser = null
   const [form, setForm] = useState({
     full_name:         editUser?.full_name         || '',
     email:             editUser?.email             || '',
-    subscription_type: editUser?.subscription_type || 'Aluno Clube do Pedrão',
+    subscription_type: editUser?.subscription_type || 'Aluno Eleva',
     role:              editUser?.role              || 'user',
   });
 
@@ -93,7 +91,7 @@ function UserFormDialog({ open, onOpenChange, onSubmit, loading, editUser = null
       setForm({
         full_name:         editUser?.full_name         || '',
         email:             editUser?.email             || '',
-        subscription_type: editUser?.subscription_type || 'Aluno Clube do Pedrão',
+        subscription_type: editUser?.subscription_type || 'Aluno Eleva',
         role:              editUser?.role              || 'user',
       });
     }
@@ -109,7 +107,7 @@ function UserFormDialog({ open, onOpenChange, onSubmit, loading, editUser = null
       <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-            {isEdit ? <Pencil className="w-5 h-5 text-purple-600" /> : <UserPlus className="w-5 h-5 text-purple-600" />}
+            {isEdit ? <Pencil className="w-5 h-5 text-[#2f456d]" /> : <UserPlus className="w-5 h-5 text-[#2f456d]" />}
             {isEdit ? 'Editar Usuário' : 'Adicionar Novo Usuário'}
           </DialogTitle>
           <DialogDescription className="text-slate-500 dark:text-slate-400">
@@ -185,7 +183,7 @@ function UserFormDialog({ open, onOpenChange, onSubmit, loading, editUser = null
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white hover:text-white">
+            <Button type="submit" disabled={loading} className="bg-[#2f456d] hover:bg-[#1a2d4a] text-white hover:text-white">
               {loading ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{isEdit ? 'Salvando...' : 'Adicionando...'}</>
               ) : (
@@ -229,7 +227,7 @@ function ReportCard({ report, onUpdate, onDelete, isAdmin, updatingId }) {
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <Badge className={`${cfg.bg} border text-xs`}>{cfg.label}</Badge>
             {report.question?.discipline && (
-              <Badge variant="outline" className="text-xs border-purple-300 text-purple-700 dark:border-purple-600 dark:text-purple-300">
+              <Badge variant="outline" className="text-xs border-[#2f456d]/30 text-[#2f456d] dark:border-blue-400 dark:text-blue-300">
                 {report.question.discipline}
               </Badge>
             )}
@@ -492,7 +490,7 @@ export default function Admin() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <Shield className="w-16 h-16 text-purple-600 mx-auto mb-4 animate-pulse" />
+          <Shield className="w-16 h-16 text-[#2f456d] mx-auto mb-4 animate-pulse" />
           <p className="text-slate-600 dark:text-slate-400">Verificando permissões...</p>
         </div>
       </div>
@@ -502,7 +500,7 @@ export default function Admin() {
   // ── Stats Usuários ─────────────────────────────────────────────────────────
   const statsAdmins     = users.filter(u => u.role === 'admin').length;
   const statsProfessors = users.filter(u => u.subscription_type === 'Professor').length;
-  const statsCascas     = users.filter(u => u.subscription_type === 'Aluno Clube dos Cascas').length;
+  const statsAlunos     = users.filter(u => u.subscription_type === 'Aluno Eleva').length;
 
   const pendingReports  = reportCounts.pending  || 0;
   const reviewingReports = reportCounts.reviewing || 0;
@@ -513,8 +511,8 @@ export default function Admin() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Shield className="w-8 h-8 text-purple-600" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 dark:from-white dark:to-white bg-clip-text text-transparent">
+            <Shield className="w-8 h-8 text-[#2f456d]" />
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#2f456d] to-[#1a2d4a] dark:from-white dark:to-white bg-clip-text text-transparent">
               {isAdmin ? 'Administração' : 'Painel do Professor'}
             </h1>
           </div>
@@ -528,7 +526,7 @@ export default function Admin() {
         {isAdmin && (
           <Button
             onClick={() => setShowCreateDialog(true)}
-            className="bg-purple-600 hover:bg-purple-700 text-white hover:text-white gap-2 shadow-md"
+            className="bg-[#2f456d] hover:bg-[#2f456d] text-white hover:text-white gap-2 shadow-md"
           >
             <UserPlus className="w-4 h-4" />
             Adicionar Usuário
@@ -551,7 +549,7 @@ export default function Admin() {
             onClick={() => setActiveTab('users')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'users'
-                ? 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-300 shadow'
+                ? 'bg-white dark:bg-slate-700 text-[#2f456d] dark:text-[#2f456d] shadow'
                 : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
           >
@@ -565,7 +563,7 @@ export default function Admin() {
           onClick={() => setActiveTab('reports')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             activeTab === 'reports'
-              ? 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-300 shadow'
+              ? 'bg-white dark:bg-slate-700 text-[#2f456d] dark:text-[#2f456d] shadow'
               : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
@@ -585,10 +583,10 @@ export default function Admin() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Total',             value: users.length,     color: 'purple', icon: Users  },
-              { label: 'Admins',            value: statsAdmins,      color: 'red',    icon: Shield },
-              { label: 'Professores',       value: statsProfessors,  color: 'blue',   icon: Users  },
-              { label: 'Clube dos Cascas',  value: statsCascas,      color: 'green',  icon: Users  },
+              { label: 'Total',        value: users.length,    color: 'blue',  icon: Users  },
+              { label: 'Admins',       value: statsAdmins,     color: 'red',   icon: Shield },
+              { label: 'Professores',  value: statsProfessors, color: 'sky',   icon: Users  },
+              { label: 'Aluno Eleva',  value: statsAlunos,     color: 'green', icon: Users  },
             ].map(({ label, value, color, icon: Icon }) => (
               <Card key={label} className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow border-slate-200 dark:border-slate-700">
                 <CardContent className="p-4">
@@ -610,7 +608,7 @@ export default function Admin() {
           <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg border-slate-200 dark:border-slate-700">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                <Users className="w-5 h-5 text-purple-600" />
+                <Users className="w-5 h-5 text-[#2f456d]" />
                 Usuários do Sistema
                 <Badge variant="secondary" className="ml-1">{users.length}</Badge>
               </CardTitle>
@@ -618,7 +616,7 @@ export default function Admin() {
             <CardContent>
               {usersLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+                  <Loader2 className="w-8 h-8 text-[#2f456d] animate-spin" />
                 </div>
               ) : usersError ? (
                 <div className="text-center py-8 text-red-500">
@@ -638,12 +636,12 @@ export default function Admin() {
                     return (
                       <div
                         key={u.id}
-                        className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-purple-300 dark:hover:border-purple-600 transition-all gap-3"
+                        className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#2f456d]/30 dark:hover:border-[#2f456d]/30 transition-all gap-3"
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
                             <span className="font-semibold text-slate-900 dark:text-white truncate">{u.full_name}</span>
-                            {isCurrentUser && <Badge className="bg-purple-600 text-white text-xs">Você</Badge>}
+                            {isCurrentUser && <Badge className="bg-[#2f456d] text-white text-xs">Você</Badge>}
                             {u.role === 'admin' && <Badge className="bg-red-100 text-red-700 border border-red-300 text-xs">Admin</Badge>}
                             {u.subscription_type && <Badge className={`${badgeClass} border text-xs`}>{u.subscription_type}</Badge>}
                             {u.first_login && <Badge className="bg-amber-100 text-amber-700 border border-amber-300 text-xs">Aguardando 1º acesso</Badge>}
@@ -655,7 +653,7 @@ export default function Admin() {
                             variant="outline"
                             size="sm"
                             onClick={() => setEditingUser(u)}
-                            className="border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-300"
+                            className="border-[#2f456d]/30 text-[#2f456d] hover:bg-[#2f456d] dark:border-[#2f456d]/30 dark:text-[#2f456d]"
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -688,8 +686,8 @@ export default function Admin() {
                   <ul className="text-sm text-slate-700 dark:text-slate-300 space-y-1">
                     <li>• Usuários adicionados aqui precisam fazer o primeiro login para definir a senha</li>
                     <li>• Professores podem criar e gerenciar questões na plataforma</li>
-                    <li>• Alunos do Clube dos Cascas têm acesso ao Tutor IA (Gramatique)</li>
-                    <li>• Alunos do Clube do Pedrão têm acesso às questões padrão</li>
+                    <li>• Alunos Eleva têm acesso completo à plataforma e ao E-Tutory IA</li>
+                    <li>• Professores podem criar e revisar questões</li>
                   </ul>
                 </div>
               </div>
@@ -728,8 +726,8 @@ export default function Admin() {
                     onClick={() => setReportStatusFilter(opt.value)}
                     className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
                       reportStatusFilter === opt.value
-                        ? 'bg-purple-600 text-white border-purple-600'
-                        : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-purple-300 hover:text-purple-700'
+                        ? 'bg-[#2f456d] text-white border-[#2f456d]/30'
+                        : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-[#2f456d]/30 hover:text-[#2f456d]'
                     }`}
                   >
                     {opt.label}
@@ -757,7 +755,7 @@ export default function Admin() {
             <CardContent>
               {reportsLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+                  <Loader2 className="w-8 h-8 text-[#2f456d] animate-spin" />
                 </div>
               ) : reports.length === 0 ? (
                 <div className="text-center py-12">

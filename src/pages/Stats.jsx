@@ -337,17 +337,22 @@ export default function Stats() {
     accuracy: safeNumber(d.accuracy)
   }));
 
-  const COLORS = ['#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95', '#3b0764'];
+  const COLORS = ['#2f456d', '#f26836', '#4d9bd4', '#e8a87c', '#1a2d4a'];
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-3">
-        <div className="flex items-center justify-center gap-2">
-          <BarChart3 className="w-10 h-10 text-purple-600 dark:text-white" />
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 dark:from-white dark:to-white bg-clip-text text-transparent">
-            Estatísticas de Desempenho
-          </h1>
+        <div className="flex items-center justify-center gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#2f456d] to-[#1a2d4a] flex items-center justify-center shadow-lg">
+            <BarChart3 className="w-7 h-7 text-[#f26836]" />
+          </div>
+          <div className="text-left">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#2f456d] dark:text-white">
+              Estatísticas
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Desempenho detalhado</p>
+          </div>
         </div>
         <p className="text-slate-600 dark:text-slate-400">
           Acompanhe seu progresso detalhado e identifique pontos de melhoria
@@ -359,7 +364,7 @@ export default function Stats() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center gap-4">
-              <Calendar className="w-5 h-5 text-purple-600" />
+              <Calendar className="w-5 h-5 text-[#2f456d]" />
               <Label className="text-sm font-medium dark:text-slate-200">Período:</Label>
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger className="w-48 dark:bg-slate-700 dark:border-slate-600">
@@ -376,7 +381,7 @@ export default function Stats() {
             <Button
               variant={compareMode ? 'default' : 'outline'}
               onClick={() => setCompareMode(!compareMode)}
-              className={compareMode ? 'bg-purple-600 hover:bg-purple-700 text-white hover:text-white' : ''}>
+              className={compareMode ? 'bg-[#2f456d] hover:bg-[#1a2d4a] text-white hover:text-white' : ''}>
 
               <ArrowLeftRight className="w-4 h-4 mr-2" />
               Comparar Períodos
@@ -387,9 +392,9 @@ export default function Stats() {
 
       {/* Period Comparison */}
       {compareMode &&
-      <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg border-purple-200 dark:border-purple-700">
+      <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg border-[#2f456d]/20 dark:border-[#2f456d]/40">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+            <CardTitle className="flex items-center gap-2 text-[#1a2d4a] dark:text-blue-300">
               <ArrowLeftRight className="w-5 h-5" />
               Comparação de Períodos
             </CardTitle>
@@ -425,12 +430,12 @@ export default function Stats() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700">
-                <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-3">{periodComparison.period1.name}</h4>
+              <div className="p-4 rounded-lg bg-[#2f456d]/5 dark:bg-[#2f456d]/20 border border-[#2f456d]/20 dark:border-[#2f456d]/40">
+                <h4 className="font-semibold text-[#2f456d] dark:text-blue-200 mb-3">{periodComparison.period1.name}</h4>
                 <div className="space-y-2">
                   <p className="text-sm text-slate-600 dark:text-slate-300">Questões: <span className="font-bold">{periodComparison.period1.total}</span></p>
                   <p className="text-sm text-slate-600 dark:text-slate-300">Acertos: <span className="font-bold text-green-600">{periodComparison.period1.correct}</span></p>
-                  <p className="text-sm text-slate-600 dark:text-slate-300">Taxa de Acerto: <span className="font-bold text-purple-600">{periodComparison.period1.accuracy}%</span></p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">Taxa de Acerto: <span className="font-bold text-[#2f456d]">{periodComparison.period1.accuracy}%</span></p>
                 </div>
               </div>
               <div className="p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700">
@@ -454,7 +459,7 @@ export default function Stats() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey={periodComparison.period1.name} fill="#7c3aed" />
+                <Bar dataKey={periodComparison.period1.name} fill="#2f456d" />
                 <Bar dataKey={periodComparison.period2.name} fill="#6366f1" />
               </BarChart>
             </ResponsiveContainer>
@@ -464,14 +469,14 @@ export default function Stats() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-purple-600 to-purple-700 text-white">
+        <Card className="bg-gradient-to-br from-[#2f456d] to-[#1a2d4a] text-white">
           <CardContent className="p-4 md:p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-purple-100 text-xs md:text-sm">Total</p>
+                <p className="text-blue-100 text-xs md:text-sm">Total</p>
                 <p className="text-2xl md:text-4xl font-bold mt-1">{totalAttempts}</p>
               </div>
-              <Target className="w-6 h-6 md:w-8 md:h-8 text-purple-200" />
+              <Target className="w-6 h-6 md:w-8 md:h-8 text-blue-200" />
             </div>
           </CardContent>
         </Card>
@@ -517,7 +522,7 @@ export default function Stats() {
       <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 dark:text-slate-100">
-            <TrendingUp className="w-5 h-5 text-purple-600" />
+            <TrendingUp className="w-5 h-5 text-[#2f456d]" />
             Evolução Semanal
           </CardTitle>
         </CardHeader>
@@ -540,7 +545,7 @@ export default function Stats() {
       <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 dark:text-slate-100">
-            <Calendar className="w-5 h-5 text-purple-600" />
+            <Calendar className="w-5 h-5 text-[#2f456d]" />
             Desempenho Diário
           </CardTitle>
         </CardHeader>
@@ -554,7 +559,7 @@ export default function Stats() {
               <Legend />
               <Line type="monotone" dataKey="correct" stroke="#10b981" name="Acertos" strokeWidth={2} />
               <Line type="monotone" dataKey="incorrect" stroke="#ef4444" name="Erros" strokeWidth={2} />
-              <Line type="monotone" dataKey="total" stroke="#7c3aed" name="Total" strokeWidth={2} />
+              <Line type="monotone" dataKey="total" stroke="#2f456d" name="Total" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -632,7 +637,7 @@ export default function Stats() {
         <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 dark:text-slate-100">
-              <Target className="w-5 h-5 text-purple-600" />
+              <Target className="w-5 h-5 text-[#2f456d]" />
               Por Dificuldade
             </CardTitle>
           </CardHeader>
@@ -643,7 +648,7 @@ export default function Stats() {
                 <XAxis dataKey="difficulty" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="accuracy" fill="#7c3aed" name="Taxa de Acerto (%)" />
+                <Bar dataKey="accuracy" fill="#2f456d" name="Taxa de Acerto (%)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -653,7 +658,7 @@ export default function Stats() {
         <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 dark:text-slate-100">
-                <Brain className="w-5 h-5 text-purple-600" />
+                <Brain className="w-5 h-5 text-[#2f456d]" />
                 Visão Geral por Disciplina
               </CardTitle>
             </CardHeader>
@@ -678,7 +683,7 @@ export default function Stats() {
 
                   <Bar
                   dataKey="accuracy"
-                  fill="#7c3aed"
+                  fill="#2f456d"
                   name="Taxa de Acerto"
                   radius={[0, 4, 4, 0]}>
 
@@ -764,7 +769,7 @@ export default function Stats() {
       <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 dark:text-slate-100">
-              <BarChart3 className="w-5 h-5 text-purple-600" />
+              <BarChart3 className="w-5 h-5 text-[#2f456d]" />
               Por Banca Examinadora
             </CardTitle>
           </CardHeader>
@@ -775,7 +780,7 @@ export default function Stats() {
                 <XAxis dataKey="board" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="accuracy" fill="#6d28d9" name="Taxa de Acerto (%)" />
+                <Bar dataKey="accuracy" fill="#f26836" name="Taxa de Acerto (%)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -783,12 +788,12 @@ export default function Stats() {
       }
 
       {/* Insights */}
-      <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-200 dark:border-purple-700">
+      <Card className="bg-gradient-to-br from-[#2f456d]/5 to-[#f26836]/5 dark:from-[#2f456d]/20 dark:to-[#1a2d4a]/30 border-[#2f456d]/20 dark:border-[#2f456d]/40">
         <CardContent className="p-6">
           <div className="flex items-start gap-3">
-            <Sparkles className="w-6 h-6 text-purple-600 mt-1" />
+            <Sparkles className="w-6 h-6 text-[#2f456d] mt-1" />
             <div>
-              <h4 className="font-semibold text-purple-900 dark:text-purple-200 text-lg mb-3">Insights e Recomendações</h4>
+              <h4 className="font-semibold text-[#2f456d] dark:text-blue-200 text-lg mb-3">Insights e Recomendações</h4>
               <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
                 {accuracyRate >= 80 &&
                 <li className="flex items-start gap-2">
@@ -804,7 +809,7 @@ export default function Stats() {
                 }
                 {worstDisciplines.length > 0 &&
                 <li className="flex items-start gap-2">
-                    <span className="text-purple-600">→</span>
+                    <span className="text-[#2f456d]">→</span>
                     <span>Priorize estudar: {worstDisciplines.map((d) => d.discipline).join(', ')}</span>
                   </li>
                 }
@@ -815,7 +820,7 @@ export default function Stats() {
                   </li>
                 }
                 <li className="flex items-start gap-2">
-                  <span className="text-purple-600">💡</span>
+                  <span className="text-[#2f456d]">💡</span>
                   <span>Mantenha uma rotina constante de estudos para melhores resultados.</span>
                 </li>
               </ul>

@@ -14,11 +14,11 @@ export const invokeLLM = async (req, res) => {
     }
 
     // Check if user has access to tutor
-    const allowedProfiles = ['Professor', 'Aluno Clube dos Cascas'];
+    const allowedProfiles = ['Professor', 'Aluno Eleva'];
     const hasAccess = req.user.role === 'admin' || allowedProfiles.includes(req.user.subscription_type);
 
     if (!hasAccess) {
-      return res.status(403).json({ error: 'Acesso ao Tutor Gramatique não permitido para seu plano' });
+      return res.status(403).json({ error: 'Acesso ao E-Tutory não permitido para seu plano' });
     }
 
     // Call OpenAI API
@@ -27,7 +27,7 @@ export const invokeLLM = async (req, res) => {
       messages: [
         {
           role: 'system',
-          content: 'Você é o Tutor Gramatique, um assistente especializado em TODAS as matérias de concursos públicos brasileiros. Seja didático, use exemplos práticos e responda de forma clara e objetiva em português brasileiro.'
+          content: 'Você é o E-Tutory, um assistente especializado em TODAS as matérias de concursos públicos brasileiros. Seja didático, use exemplos práticos e responda de forma clara e objetiva em português brasileiro.'
         },
         {
           role: 'user',
