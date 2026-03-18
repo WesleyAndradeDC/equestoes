@@ -38,7 +38,7 @@ function SubjectsDropdown({ subjects }) {
         <div className="relative">
           <button
             onClick={() => setOpen((v) => !v)}
-            className="flex items-center gap-0.5 text-xs text-[#2f456d] dark:text-[#2f456d] bg-[#2f456d] dark:bg-[#2f456d]/30 border border-[#2f456d]/30 dark:border-[#2f456d]/30 px-2 py-1 rounded hover:bg-[#2f456d] dark:hover:bg-[#2f456d]/40 transition-colors font-medium"
+            className="flex items-center gap-0.5 text-xs text-white bg-[#2f456d] border border-[#2f456d]/50 px-2 py-1 rounded hover:bg-[#243756] dark:hover:bg-[#3a5480] transition-colors font-medium"
           >
             +{rest.length}
             {open
@@ -138,7 +138,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
   const getOptionStyle = (letter) => {
     if (!isAnswered) {
       return selectedAnswer === letter
-        ? 'border-[#2f456d]/30 bg-[#2f456d] dark:bg-[#2f456d]/30 shadow-md'
+        ? 'border-[#2f456d] bg-[#2f456d] dark:bg-[#2f456d]/40 shadow-md text-white dark:text-white [&_span]:text-white [&_span]:dark:text-white'
         : 'border-slate-200 dark:border-slate-700 hover:border-[#2f456d]/30 hover:bg-slate-50 dark:hover:bg-slate-800';
     }
 
@@ -210,7 +210,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
               <Badge className={`${difficultyColors[question.difficulty]} border font-medium`}>
                 {question.difficulty}
               </Badge>
-              <Badge variant="outline" className="bg-[#2f456d] dark:bg-[#2f456d]/30 border-[#2f456d]/30 dark:border-[#2f456d]/30 text-[#2f456d] dark:text-[#2f456d] font-medium">
+              <Badge variant="outline" className="bg-[#2f456d]/10 dark:bg-[#2f456d]/30 border-[#2f456d]/30 dark:border-[#2f456d]/50 text-[#2f456d] dark:text-blue-300 font-medium">
                 {question.discipline}
               </Badge>
               {question.exam_board && (
@@ -329,7 +329,7 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
               }`}
             >
               <div className="flex items-start gap-3">
-                <span className="font-bold text-[#2f456d] dark:text-[#2f456d] shrink-0">{option.letter})</span>
+                <span className="font-bold text-[#2f456d] dark:text-blue-300 shrink-0">{option.letter})</span>
                 <span
                   className="text-slate-700 dark:text-slate-200 flex-1"
                   dangerouslySetInnerHTML={{ __html: option.text }}
@@ -359,8 +359,8 @@ export default function QuestionCard({ question, onAnswer, savedInNotebook = fal
       )}
 
       {showExplanation && (
-        <CardFooter className="flex-col items-start space-y-3 bg-[#2f456d]/50 dark:bg-[#2f456d]/20 border-t border-[#2f456d]/30 dark:border-[#2f456d]/30">
-          <div className="flex items-center gap-2 text-[#2f456d] dark:text-[#2f456d]">
+        <CardFooter className="flex-col items-start space-y-3 bg-amber-50 dark:bg-amber-900/10 border-t border-amber-200 dark:border-amber-800/50">
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
             <Lightbulb className="w-5 h-5" />
             <h4 className="font-semibold">Comentário do Professor</h4>
           </div>

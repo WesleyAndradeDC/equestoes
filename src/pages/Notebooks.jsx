@@ -86,7 +86,7 @@ export default function Notebooks() {
 
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-9 from-[#2f456d] to-[#1a2d4a] hover:from-[#2f456d] hover:to-[#1a2d4a] text-white hover:text-white shadow-md">
+            <Button className="bg-[#2f456d] hover:bg-[#243756] text-white shadow-md">
               <Plus className="w-4 h-4 mr-2" />
               Novo Caderno
             </Button>

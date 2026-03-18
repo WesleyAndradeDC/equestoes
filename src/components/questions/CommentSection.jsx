@@ -123,7 +123,7 @@ export default function CommentSection({ questionId, canComment = false }) {
                     <div className="flex items-center gap-2">
                       <span className={`font-medium text-sm ${
                         isProfessor(comment.author_role)
-                          ? 'text-[#2f456d] dark:text-[#2f456d]'
+                          ? 'text-[#2f456d] dark:text-blue-300'
                           : 'text-slate-700 dark:text-slate-200'
                       }`}>
                         {comment.author_name}
@@ -142,7 +142,7 @@ export default function CommentSection({ questionId, canComment = false }) {
               </div>
               <p className={`text-sm leading-relaxed ${
                 isProfessor(comment.author_role)
-                  ? 'text-[#2f456d] dark:text-[#2f456d]'
+                  ? 'text-[#2f456d] dark:text-blue-200'
                   : 'text-slate-600 dark:text-slate-300'
               }`}>
                 {comment.text}

@@ -549,7 +549,7 @@ export default function Admin() {
             onClick={() => setActiveTab('users')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'users'
-                ? 'bg-white dark:bg-slate-700 text-[#2f456d] dark:text-[#2f456d] shadow'
+                ? 'bg-white dark:bg-slate-700 text-[#2f456d] dark:text-blue-300 shadow'
                 : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
           >
@@ -563,7 +563,7 @@ export default function Admin() {
           onClick={() => setActiveTab('reports')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             activeTab === 'reports'
-              ? 'bg-white dark:bg-slate-700 text-[#2f456d] dark:text-[#2f456d] shadow'
+              ? 'bg-white dark:bg-slate-700 text-[#2f456d] dark:text-blue-300 shadow'
               : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
@@ -653,7 +653,7 @@ export default function Admin() {
                             variant="outline"
                             size="sm"
                             onClick={() => setEditingUser(u)}
-                            className="border-[#2f456d]/30 text-[#2f456d] hover:bg-[#2f456d] dark:border-[#2f456d]/30 dark:text-[#2f456d]"
+                            className="border-[#2f456d]/40 text-[#2f456d] dark:text-blue-300 hover:bg-[#2f456d] hover:text-white dark:border-[#2f456d]/50 dark:hover:bg-[#2f456d]/50"
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>

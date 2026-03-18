@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Home, BookOpen, FolderOpen, BarChart3, Trophy,
-  LogOut, Menu, X, Moon, Sun, Bot, Layers, Shield,
+  Home, BookOpen, FolderOpen, BarChart3,
+  LogOut, Menu, X, Moon, Sun, Brain, Layers, Shield,
 } from 'lucide-react';
 import TutorChatPopup from '../components/tutor/TutorChatPopup';
 import { Button } from '@/components/ui/button';
@@ -51,11 +51,10 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Cadernos',    page: 'Notebooks',   icon: FolderOpen },
     { name: 'Estatísticas',page: 'Stats',       icon: BarChart3 },
     { name: 'Flashcards',  page: 'Flashcards',  icon: Layers },
-    { name: 'Ranking',     page: 'Ranking',     icon: Trophy },
   ];
 
   if (hasTutorAccess) {
-    navigation.push({ name: 'E-Tutory', page: 'ETutory', icon: Bot });
+    navigation.push({ name: 'E-Tutory', page: 'ETutory', icon: Brain });
   }
 
   if (isProfessor) {

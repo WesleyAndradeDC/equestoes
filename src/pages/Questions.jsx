@@ -292,32 +292,31 @@ export default function Questions() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl md:text-4xl font-bold text-[#2f456d] dark:text-white">
-          {currentNotebook ? `Caderno: ${currentNotebook.name}` : 'Resolver Questões'}
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400">
-          {filteredQuestions.length} questões disponíveis
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#2f456d] dark:text-white">
+            {currentNotebook ? `Caderno: ${currentNotebook.name}` : 'Resolver Questões'}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            {filteredQuestions.length} questões disponíveis
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Filter Panel */}
-        <div className="lg:col-span-1">
-          <FilterPanel
-            filters={filters}
-            onFilterChange={setFilters}
-            onClearFilters={handleClearFilters}
-            availableDisciplines={availableDisciplines}
-            availableSubjects={availableSubjects}
-            subjectsByDiscipline={subjectsByDiscipline}
-          />
-        </div>
+      {/* Filter Panel — horizontal no topo */}
+      <FilterPanel
+        filters={filters}
+        onFilterChange={setFilters}
+        onClearFilters={handleClearFilters}
+        availableDisciplines={availableDisciplines}
+        availableSubjects={availableSubjects}
+        subjectsByDiscipline={subjectsByDiscipline}
+      />
 
-        {/* Question Display */}
-        <div className="lg:col-span-3 space-y-6">
+      {/* Question Display — full width */}
+      <div className="space-y-6">
           {filteredQuestions.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-4">
               <AlertCircle className="w-16 h-16 text-slate-300 dark:text-slate-600" />
@@ -414,7 +413,6 @@ export default function Questions() {
             </>
           )}
         </div>
-      </div>
 
       {/* Save to Notebook Dialog */}
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>

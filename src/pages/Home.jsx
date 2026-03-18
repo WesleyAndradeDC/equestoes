@@ -8,10 +8,10 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import {
   Target, TrendingUp, Award, BookOpen, BarChart3, Sparkles, Brain,
-  Layers, Trophy, Bot, ArrowRight, Flame, CheckCircle2, XCircle,
+  Layers, ArrowRight, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import StreakBanner from '@/components/StreakBanner';
+import { StreakBanner } from '@/components/StreakBanner';
 import { SkeletonCard } from '@/components/SkeletonCard';
 
 const PRIMARY = '#2f456d';
@@ -107,8 +107,6 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-      <StreakBanner streak={user?.study_streak} />
-
       {/* Hero Section */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#2f456d] via-[#243756] to-[#1a2d4a] p-6 sm:p-8 text-white shadow-xl">
         <div className="absolute inset-0 opacity-10">
@@ -153,11 +151,11 @@ export default function Home() {
 
       {/* KPI Cards */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             {
               label: 'Questões Resolvidas',
@@ -165,7 +163,6 @@ export default function Home() {
               sub: `de ${allQuestions.length} disponíveis`,
               icon: Target,
               accent: PRIMARY,
-              change: stats.total > 0 ? '+' + stats.total : null,
             },
             {
               label: 'Taxa de Acerto',
@@ -173,7 +170,6 @@ export default function Home() {
               sub: `${stats.correct} corretas`,
               icon: TrendingUp,
               accent: stats.accuracy >= 70 ? '#16a34a' : stats.accuracy >= 50 ? SECONDARY : '#ef4444',
-              change: null,
             },
             {
               label: 'Ponto Forte',
@@ -181,7 +177,6 @@ export default function Home() {
               sub: stats.best ? `${stats.best.accuracy}% de acerto` : 'Resolva questões',
               icon: Award,
               accent: SECONDARY,
-              change: null,
             },
           ].map(({ label, value, sub, icon: Icon, accent }) => (
             <Card key={label} className="relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all group">
@@ -200,6 +195,8 @@ export default function Home() {
               </CardContent>
             </Card>
           ))}
+          {/* Streak Card */}
+          <StreakBanner streak={user?.study_streak} />
         </div>
       )}
 

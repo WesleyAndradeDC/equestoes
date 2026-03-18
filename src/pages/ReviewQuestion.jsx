@@ -157,7 +157,7 @@ export default function ReviewQuestion() {
 
             <Button
               onClick={handleSearch}
-              disabled={isSearching} className="bg-slate-950 text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 hover:bg-[#2f456d]">
+              disabled={isSearching} className="bg-[#2f456d] hover:bg-[#243756] text-white shadow h-9">
 
 
               {isSearching ?
@@ -180,7 +180,7 @@ export default function ReviewQuestion() {
                 <Edit3 className="w-5 h-5 text-[#2f456d]" />
                 Editar Questão
               </CardTitle>
-              <Badge className="bg-[#2f456d] text-[#2f456d] dark:bg-[#2f456d]/50 dark:text-[#2f456d]">
+              <Badge className="bg-[#2f456d] text-white dark:bg-[#2f456d]/60 dark:text-blue-200">
                 #{editedQuestion.code}
               </Badge>
             </div>

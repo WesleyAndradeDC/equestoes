@@ -1,16 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Filter, X, Search, ChevronDown } from 'lucide-react';
+import { Filter, X, Search, ChevronDown, SlidersHorizontal, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 function SearchableSelect({ value, onValueChange, options, placeholder, label }) {
   const [open, setOpen] = useState(false);
@@ -18,18 +11,13 @@ function SearchableSelect({ value, onValueChange, options, placeholder, label })
 
   const filteredOptions = useMemo(() => {
     if (!search) return options;
-    return options.filter(opt => 
-      opt.toLowerCase().includes(search.toLowerCase())
-    );
+    return options.filter(opt => opt.toLowerCase().includes(search.toLowerCase()));
   }, [options, search]);
 
-  // Truncate display value for long text
-  const truncateText = (text, maxLength = 25) => {
+  const truncateText = (text, maxLength = 22) => {
     if (!text) return placeholder;
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    return text.length > maxLength ? text.substring(0, maxLength) + '…' : text;
   };
-
-  const displayValue = truncateText(value) || placeholder;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -38,46 +26,53 @@ function SearchableSelect({ value, onValueChange, options, placeholder, label })
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between bg-white dark:bg-slate-700 dark:border-slate-600 text-left font-normal h-10"
+          className={`justify-between font-normal h-9 text-sm min-w-[140px] ${
+            value
+              ? 'bg-[#2f456d] text-white border-[#2f456d] hover:bg-[#243756] hover:text-white dark:bg-[#2f456d] dark:text-white dark:border-[#2f456d]'
+              : 'bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-700 dark:text-slate-200'
+          }`}
         >
-          <span className={`truncate ${value ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400'}`}>
-            {displayValue}
-          </span>
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span className="truncate">{truncateText(value) || placeholder}</span>
+          <ChevronDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-70" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0" align="start" sideOffset={4}>
+      <PopoverContent className="w-[260px] p-0" align="start" sideOffset={6}>
         <div className="p-2 border-b border-slate-200 dark:border-slate-700">
           <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <Input
-              placeholder={`Buscar ${label.toLowerCase()}...`}
+              placeholder={`Buscar ${label.toLowerCase()}…`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-9"
+              className="pl-7 h-8 text-sm"
             />
           </div>
         </div>
-        <div className="max-h-48 overflow-y-auto">
+        <div className="max-h-52 overflow-y-auto">
+          {value && (
+            <button
+              onClick={() => { onValueChange(null); setOpen(false); setSearch(''); }}
+              className="w-full text-left px-3 py-2 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2"
+            >
+              <X className="w-3 h-3" />
+              Limpar seleção
+            </button>
+          )}
           {filteredOptions.length === 0 ? (
-            <p className="p-3 text-sm text-slate-500 dark:text-slate-400 text-center">
-              Nenhum resultado
-            </p>
+            <p className="p-3 text-sm text-slate-500 dark:text-slate-400 text-center">Nenhum resultado</p>
           ) : (
             filteredOptions.map((option) => (
               <button
                 key={option}
-                onClick={() => {
-                  onValueChange(option === value ? null : option);
-                  setOpen(false);
-                  setSearch('');
-                }}
+                onClick={() => { onValueChange(option === value ? null : option); setOpen(false); setSearch(''); }}
                 className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 ${
-                  option === value ? 'bg-[#2f456d] dark:bg-[#2f456d]/30 text-[#2f456d] dark:text-[#2f456d] font-medium' : 'text-slate-700 dark:text-slate-200'
+                  option === value
+                    ? 'bg-[#2f456d]/10 dark:bg-[#2f456d]/30 text-[#2f456d] dark:text-blue-300 font-medium'
+                    : 'text-slate-700 dark:text-slate-200'
                 }`}
                 title={option}
               >
-                <span className="line-clamp-2">{option}</span>
+                {option}
               </button>
             ))
           )}
@@ -87,13 +82,20 @@ function SearchableSelect({ value, onValueChange, options, placeholder, label })
   );
 }
 
-export default function FilterPanel({ filters, onFilterChange, onClearFilters, availableDisciplines = [], availableSubjects = [], subjectsByDiscipline = {} }) {
+export default function FilterPanel({
+  filters,
+  onFilterChange,
+  onClearFilters,
+  availableDisciplines = [],
+  availableSubjects = [],
+  subjectsByDiscipline = {},
+}) {
+  const [expanded, setExpanded] = useState(false);
+
   const handleDisciplineChange = (discipline) => {
-    // Quando muda a disciplina, limpa o assunto selecionado
     onFilterChange({ ...filters, discipline, subject: null });
   };
 
-  // Filtra os assuntos baseado na disciplina selecionada
   const filteredSubjects = useMemo(() => {
     if (filters.discipline && subjectsByDiscipline[filters.discipline]) {
       return subjectsByDiscipline[filters.discipline];
@@ -101,106 +103,148 @@ export default function FilterPanel({ filters, onFilterChange, onClearFilters, a
     return availableSubjects;
   }, [filters.discipline, subjectsByDiscipline, availableSubjects]);
 
-  const hasActiveFilters = filters.difficulty || filters.status || filters.discipline || filters.subject || filters.question_type;
+  const activeFilters = [
+    filters.difficulty && { key: 'difficulty', label: filters.difficulty },
+    filters.status && {
+      key: 'status',
+      label: filters.status === 'not_answered' ? 'Não Resolvidas' : filters.status === 'correct' ? 'Acertadas' : 'Erradas',
+    },
+    filters.discipline && { key: 'discipline', label: filters.discipline },
+    filters.subject && { key: 'subject', label: filters.subject },
+    filters.question_type && { key: 'question_type', label: filters.question_type },
+  ].filter(Boolean);
+
+  const hasActiveFilters = activeFilters.length > 0;
+
+  const removeFilter = (key) => {
+    const updated = { ...filters, [key]: null };
+    if (key === 'discipline') updated.subject = null;
+    onFilterChange(updated);
+  };
 
   return (
-    <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-md border-slate-200 dark:border-slate-700">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-[#2f456d] dark:text-white" />
-            <CardTitle className="text-lg dark:text-slate-100">Filtros Avançados</CardTitle>
-          </div>
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
+      {/* Header bar - always visible */}
+      <div className="flex items-center gap-3 px-4 py-3 flex-wrap">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-[#2f456d] dark:hover:text-white transition-colors shrink-0"
+        >
+          <SlidersHorizontal className="w-4 h-4 text-[#2f456d] dark:text-blue-400" />
+          Filtros
           {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClearFilters}
-              className="text-slate-500 hover:text-slate-700"
+            <span className="ml-0.5 bg-[#f26836] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+              {activeFilters.length}
+            </span>
+          )}
+          {expanded ? <ChevronUp className="w-3.5 h-3.5 ml-1 opacity-60" /> : <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-60" />}
+        </button>
+
+        <div className="w-px h-5 bg-slate-200 dark:bg-slate-600 shrink-0" />
+
+        {/* Active filter badges */}
+        <div className="flex flex-wrap gap-1.5 flex-1">
+          {activeFilters.map((f) => (
+            <Badge
+              key={f.key}
+              className="bg-[#2f456d]/10 text-[#2f456d] dark:bg-[#2f456d]/30 dark:text-blue-300 border border-[#2f456d]/20 dark:border-[#2f456d]/40 hover:bg-[#2f456d]/20 cursor-pointer transition-colors pr-1 gap-1 text-xs"
+              onClick={() => removeFilter(f.key)}
             >
-              <X className="w-4 h-4 mr-1" />
-              Limpar
-            </Button>
+              {f.label}
+              <X className="w-3 h-3 opacity-60" />
+            </Badge>
+          ))}
+          {!hasActiveFilters && !expanded && (
+            <span className="text-xs text-slate-400 dark:text-slate-500 italic">Nenhum filtro ativo</span>
           )}
         </div>
-      </CardHeader>
 
-      <CardContent className="space-y-6">
-        {/* Difficulty Filter */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Nível de Dificuldade</Label>
-          <SearchableSelect
-            value={filters.difficulty}
-            onValueChange={(value) => onFilterChange({ ...filters, difficulty: value })}
-            options={['Fácil', 'Médio', 'Difícil']}
-            placeholder="Todos os níveis"
-            label="nível"
-          />
-        </div>
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClearFilters}
+            className="h-7 px-2 text-xs text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0 gap-1"
+          >
+            <X className="w-3 h-3" />
+            Limpar tudo
+          </Button>
+        )}
+      </div>
 
-        {/* Status Filter */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Status de Resolução</Label>
-          <SearchableSelect
-            value={filters.status === 'not_answered' ? 'Não Resolvidas' : 
-                   filters.status === 'correct' ? 'Acertadas' : 
-                   filters.status === 'incorrect' ? 'Erradas' : null}
-            onValueChange={(value) => {
-              let statusValue = null;
-              if (value === 'Não Resolvidas') statusValue = 'not_answered';
-              else if (value === 'Acertadas') statusValue = 'correct';
-              else if (value === 'Erradas') statusValue = 'incorrect';
-              onFilterChange({ ...filters, status: statusValue });
-            }}
-            options={['Não Resolvidas', 'Acertadas', 'Erradas']}
-            placeholder="Todas"
-            label="status"
-          />
-        </div>
+      {/* Expanded filter options */}
+      {expanded && (
+        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-4">
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Dificuldade</p>
+              <SearchableSelect
+                value={filters.difficulty}
+                onValueChange={(v) => onFilterChange({ ...filters, difficulty: v })}
+                options={['Fácil', 'Médio', 'Difícil']}
+                placeholder="Todos os níveis"
+                label="nível"
+              />
+            </div>
 
-        {/* Discipline Filter */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Disciplina</Label>
-          <SearchableSelect
-            value={filters.discipline}
-            onValueChange={handleDisciplineChange}
-            options={availableDisciplines}
-            placeholder={availableDisciplines.length > 0 ? "Todas as disciplinas" : "Carregando..."}
-            label="disciplina"
-          />
-        </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Status</p>
+              <SearchableSelect
+                value={
+                  filters.status === 'not_answered' ? 'Não Resolvidas'
+                  : filters.status === 'correct' ? 'Acertadas'
+                  : filters.status === 'incorrect' ? 'Erradas' : null
+                }
+                onValueChange={(v) => {
+                  let s = null;
+                  if (v === 'Não Resolvidas') s = 'not_answered';
+                  else if (v === 'Acertadas') s = 'correct';
+                  else if (v === 'Erradas') s = 'incorrect';
+                  onFilterChange({ ...filters, status: s });
+                }}
+                options={['Não Resolvidas', 'Acertadas', 'Erradas']}
+                placeholder="Todas"
+                label="status"
+              />
+            </div>
 
-        {/* Subject Filter */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Assunto
-            {filters.discipline && (
-              <span className="ml-1 text-xs text-[#2f456d] dark:text-[#2f456d]">
-                ({filters.discipline})
-              </span>
-            )}
-          </Label>
-          <SearchableSelect
-            value={filters.subject}
-            onValueChange={(value) => onFilterChange({ ...filters, subject: value })}
-            options={filteredSubjects}
-            placeholder={filteredSubjects.length > 0 ? "Todos os assuntos" : "Nenhum assunto disponível"}
-            label="assunto"
-          />
-        </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Disciplina</p>
+              <SearchableSelect
+                value={filters.discipline}
+                onValueChange={handleDisciplineChange}
+                options={availableDisciplines}
+                placeholder={availableDisciplines.length > 0 ? 'Todas as disciplinas' : 'Carregando…'}
+                label="disciplina"
+              />
+            </div>
 
-        {/* Question Type Filter */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tipo de Questão</Label>
-          <SearchableSelect
-            value={filters.question_type}
-            onValueChange={(value) => onFilterChange({ ...filters, question_type: value })}
-            options={['Múltipla Escolha', 'Certo ou Errado']}
-            placeholder="Todos os tipos"
-            label="tipo"
-          />
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                Assunto {filters.discipline && <span className="normal-case font-normal">({filters.discipline.split(' ')[0]})</span>}
+              </p>
+              <SearchableSelect
+                value={filters.subject}
+                onValueChange={(v) => onFilterChange({ ...filters, subject: v })}
+                options={filteredSubjects}
+                placeholder={filteredSubjects.length > 0 ? 'Todos os assuntos' : 'Sem assuntos'}
+                label="assunto"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Tipo</p>
+              <SearchableSelect
+                value={filters.question_type}
+                onValueChange={(v) => onFilterChange({ ...filters, question_type: v })}
+                options={['Múltipla Escolha', 'Certo ou Errado']}
+                placeholder="Todos os tipos"
+                label="tipo"
+              />
+            </div>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
