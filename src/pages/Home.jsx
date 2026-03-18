@@ -98,9 +98,8 @@ export default function Home() {
     { label: 'E-Questões', desc: 'Resolver questões', icon: BookOpen, page: 'Questions', color: 'bg-[#2f456d]' },
     { label: 'Flashcards', desc: 'Revisão espaçada', icon: Layers, page: 'Flashcards', color: 'bg-[#f26836]' },
     { label: 'Estatísticas', desc: 'Ver progresso', icon: BarChart3, page: 'Stats', color: 'bg-emerald-600' },
-    { label: 'Ranking', desc: 'Sua posição', icon: Trophy, page: 'Ranking', color: 'bg-amber-500' },
     { label: 'Cadernos', desc: 'Meus cadernos', icon: BookOpen, page: 'Notebooks', color: 'bg-sky-600' },
-    { label: 'E-Tutory', desc: 'Tirar dúvidas IA', icon: Bot, page: 'ETutory', color: 'bg-violet-600' },
+    { label: 'E-Tutory', desc: 'Tirar dúvidas IA', icon: Brain, page: 'ETutory', color: 'bg-violet-600' },
   ];
 
   const firstName = user?.full_name?.split(' ')[0] || '';
