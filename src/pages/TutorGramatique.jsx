@@ -18,8 +18,7 @@ export default function TutorGramatique() {
   useEffect(() => {
     base44.auth.me().then((u) => {
       setUser(u);
-      // Verificar acesso: admin, Professor ou Aluno Clube dos Cascas
-      const allowedProfiles = ['Professor', 'Aluno Clube dos Cascas'];
+      const allowedProfiles = ['Professor', 'Aluno Eleva'];
       const isAllowed = u.role === 'admin' || allowedProfiles.includes(u.subscription_type);
       setHasAccess(isAllowed);
     }).catch(() => {
@@ -106,7 +105,7 @@ Seja didático, use exemplos práticos e responda de forma clara e objetiva. Res
           Acesso Restrito
         </h1>
         <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-          O Tutor Gramatique está disponível apenas para alunos do <strong>Clube dos Cascas</strong> e <strong>Professores</strong>.
+          O Tutor Gramatique está disponível apenas para <strong>Alunos Eleva</strong> e <strong>Professores</strong>.
         </p>
         <p className="text-sm text-slate-500 dark:text-slate-500">
           Entre em contato para fazer upgrade do seu plano.

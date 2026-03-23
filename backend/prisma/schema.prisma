@@ -23,7 +23,7 @@ model User {
   role                String   @default("user")         // "user" | "admin"
 
   // ── Assinatura — WooCommerce Subscriptions ───────────────
-  subscription_type   String?  // "Aluno Eleva" | "Aluno Eleva" | "Professor"
+  subscription_type   String?  // "Aluno Eleva" | "Professor"
   subscription_status String   @default("inactive")
   // Valores: active | pending-cancel | on-hold | cancelled | expired | pending | inactive
   subscription_active Boolean  @default(false)

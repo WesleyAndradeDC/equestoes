@@ -216,7 +216,7 @@ export default function Layout({ children, currentPageName }) {
       <footer className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border-t border-slate-200/60 dark:border-slate-700/60 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <p className="text-center text-xs sm:text-sm text-slate-400 dark:text-slate-500">
-            © 2025 E-QUESTÕES — Plataforma de Estudos para Concursos
+            © 2026 E-QUESTÕES — Plataforma de Estudos para Concursos
           </p>
         </div>
       </footer>

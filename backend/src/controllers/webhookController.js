@@ -1,15 +1,13 @@
 import prisma from '../config/database.js';
 import { syncUserSubscriptionCache } from '../utils/subscriptionUtils.js';
 
-// Mapeamento de product_ids para tipos de assinatura.
-// IMPORTANTE: cada ID deve aparecer em apenas UM plano.
+// Mapeamento de product_ids para o tipo de assinatura único "Aluno Eleva"
 const PRODUCT_MAPPING = {
-  // Aluno Eleva — acesso restrito a Português
-  'Aluno Eleva':  [35416, 35418, 35413, 47507, 47485],
-  // Aluno Eleva — acesso completo (inclui PRF 2026: 47818)
-  'Aluno Eleva': [19479, 4252, 28237, 28239, 28240, 45748, 47818],
-  // Banco do Brasil — acesso completo igual ao Cascas
-  'Aluno Eleva':  [47825],
+  'Aluno Eleva': [
+    35416, 35418, 35413, 47507, 47485, // planos básicos
+    19479, 4252, 28237, 28239, 28240, 45748, 47818, // planos completos + PRF 2026
+    47825, // Banco do Brasil
+  ],
 };
 
 /**
@@ -33,21 +31,6 @@ function identifySubscriptionType(lineItems) {
 
   console.log('🔍 Product IDs encontrados:', productIds);
 
-  // Prioridade: Cascas > BB > Pedrão (do acesso mais amplo para o mais restrito)
-
-  // 1. Aluno Eleva — acesso total (inclui PRF 2026: 47818)
-  if (productIds.some(id => PRODUCT_MAPPING['Aluno Eleva'].includes(id))) {
-    console.log('✅ Tipo identificado: Aluno Eleva');
-    return 'Aluno Eleva';
-  }
-
-  // 2. Banco do Brasil — acesso total igual ao Cascas (47825)
-  if (productIds.some(id => PRODUCT_MAPPING['Aluno Eleva'].includes(id))) {
-    console.log('✅ Tipo identificado: Aluno Eleva');
-    return 'Aluno Eleva';
-  }
-
-  // 3. Aluno Eleva — acesso restrito a Português
   if (productIds.some(id => PRODUCT_MAPPING['Aluno Eleva'].includes(id))) {
     console.log('✅ Tipo identificado: Aluno Eleva');
     return 'Aluno Eleva';

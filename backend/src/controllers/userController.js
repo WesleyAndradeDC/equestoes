@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 // Valores válidos para subscription_type e role
 const VALID_SUBSCRIPTION_TYPES = [
   'Aluno Eleva',
-  'Aluno Eleva',
   'Professor',
 ];
 const VALID_ROLES = ['user', 'admin'];
