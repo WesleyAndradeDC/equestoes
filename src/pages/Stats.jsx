@@ -595,24 +595,44 @@ export default function Stats() {
 
       {/* Best & Worst Subjects */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Melhores Assuntos */}
         <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-              <Star className="w-4 h-4 text-amber-500" />
-              Melhores Assuntos
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                <Star className="w-4 h-4 text-emerald-500" />
+                Melhores Assuntos
+              </CardTitle>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Top {Math.min(bestSubjects.length, 5)}</span>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3">
             {bestSubjects.length > 0 ? bestSubjects.map((s, i) => (
-              <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold shrink-0">#{i + 1}</span>
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{s.subject}</span>
+              <div key={i} className="space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 text-white ${i === 0 ? 'bg-amber-500' : i === 1 ? 'bg-slate-400' : i === 2 ? 'bg-amber-700' : 'bg-emerald-500/70'}`}>
+                      {i + 1}
+                    </span>
+                    <span className="text-sm text-slate-700 dark:text-slate-200 truncate" title={s.subject}>{s.subject}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-slate-400 dark:text-slate-500">{s.correct}/{s.total}</span>
+                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 w-10 text-right">{s.accuracy}%</span>
+                  </div>
                 </div>
-                <Badge className="bg-emerald-600 text-white border-0 shrink-0 ml-2">{s.accuracy}%</Badge>
+                <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-2 rounded-full transition-all duration-700"
+                    style={{
+                      width: `${Math.min(100, s.accuracy)}%`,
+                      background: `linear-gradient(90deg, #10b981, #34d399)`,
+                    }}
+                  />
+                </div>
               </div>
             )) : (
-              <div className="text-center py-6 text-slate-400 dark:text-slate-500">
+              <div className="text-center py-8 text-slate-400 dark:text-slate-500">
                 <Star className="w-8 h-8 mx-auto mb-2 opacity-40" />
                 <p className="text-sm">Nenhum dado ainda</p>
               </div>
@@ -620,24 +640,44 @@ export default function Stats() {
           </CardContent>
         </Card>
 
+        {/* Assuntos para Revisar */}
         <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-              <Flame className="w-4 h-4 text-red-500" />
-              Assuntos para Revisar
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-500" />
+                Assuntos para Revisar
+              </CardTitle>
+              <span className="text-xs text-red-400 dark:text-red-500 font-medium">Prioridade</span>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3">
             {worstSubjects.length > 0 ? worstSubjects.map((s, i) => (
-              <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50">
-                <div className="flex items-center gap-2 min-w-0">
-                  <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{s.subject}</span>
+              <div key={i} className="space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+                    </span>
+                    <span className="text-sm text-slate-700 dark:text-slate-200 truncate" title={s.subject}>{s.subject}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-slate-400 dark:text-slate-500">{s.correct}/{s.total}</span>
+                    <span className="text-sm font-bold text-red-600 dark:text-red-400 w-10 text-right">{s.accuracy}%</span>
+                  </div>
                 </div>
-                <Badge className="bg-red-600 text-white border-0 shrink-0 ml-2">{s.accuracy}%</Badge>
+                <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-2 rounded-full transition-all duration-700"
+                    style={{
+                      width: `${Math.min(100, s.accuracy)}%`,
+                      background: `linear-gradient(90deg, #ef4444, #f87171)`,
+                    }}
+                  />
+                </div>
               </div>
             )) : (
-              <div className="text-center py-6 text-slate-400 dark:text-slate-500">
+              <div className="text-center py-8 text-slate-400 dark:text-slate-500">
                 <Flame className="w-8 h-8 mx-auto mb-2 opacity-40" />
                 <p className="text-sm">Nenhum dado ainda</p>
               </div>

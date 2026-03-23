@@ -173,6 +173,35 @@ export const updateUser = async (req, res) => {
   }
 };
 
+// Reset password (admin only) — zera senha e força primeiro acesso
+export const resetUserPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    if (id === req.user.id) {
+      return res.status(400).json({ error: 'Não é possível resetar sua própria senha por aqui' });
+    }
+
+    await prisma.user.update({
+      where: { id },
+      data: {
+        password_hash: null,
+        first_login: true,
+      },
+    });
+
+    res.json({ message: `Senha de ${user.full_name} resetada. No próximo acesso ele definirá uma nova senha.` });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Erro ao resetar senha' });
+  }
+};
+
 // Delete user (admin only)
 export const deleteUser = async (req, res) => {
   try {

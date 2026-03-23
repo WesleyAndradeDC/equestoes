@@ -4,7 +4,8 @@ import {
   getUser,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  resetUserPassword,
 } from '../controllers/userController.js';
 import { authenticate, requireAdmin } from '../middlewares/auth.js';
 
@@ -16,6 +17,7 @@ router.post('/', authenticate, requireAdmin, createUser);
 router.get('/:id', authenticate, requireAdmin, getUser);
 router.put('/:id', authenticate, requireAdmin, updateUser);
 router.delete('/:id', authenticate, requireAdmin, deleteUser);
+router.post('/:id/reset-password', authenticate, requireAdmin, resetUserPassword);
 
 export default router;
 

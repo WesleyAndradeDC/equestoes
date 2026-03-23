@@ -39,6 +39,7 @@ export const API_ENDPOINTS = {
   USERS: '/users',
   CREATE_USER: '/users',
   USER_BY_ID: (id) => `/users/${id}`,
+  USER_RESET_PASSWORD: (id) => `/users/${id}/reset-password`,
 
   // Ranking
   RANKING: '/ranking',

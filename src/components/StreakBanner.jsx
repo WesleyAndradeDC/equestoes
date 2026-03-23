@@ -40,4 +40,3 @@ export default function StreakCard({ streak }) {
 export function StreakBanner({ streak }) {
   return <StreakCard streak={streak} />;
 }
-

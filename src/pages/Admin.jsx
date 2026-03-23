@@ -40,6 +40,7 @@ import {
   Eye,
   ChevronDown,
   ChevronUp,
+  KeyRound,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import userService from '@/services/userService';
@@ -375,6 +376,8 @@ export default function Admin() {
   const [successMessage, setSuccessMessage] = useState('');
   const [reportStatusFilter, setReportStatusFilter] = useState('pending');
   const [updatingReportId, setUpdatingReportId] = useState(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState(null); // { id, name }
+  const [confirmResetUser, setConfirmResetUser] = useState(null);   // { id, name }
 
   const isProfessor = currentUser?.subscription_type === 'Professor';
   const isAdmin     = currentUser?.role === 'admin';
@@ -437,9 +440,19 @@ export default function Admin() {
     mutationFn: (userId) => userService.delete(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setConfirmDeleteUser(null);
       toast.success('Usuário excluído com sucesso');
     },
-    onError: () => toast.error('Erro ao excluir usuário'),
+    onError: () => { setConfirmDeleteUser(null); toast.error('Erro ao excluir usuário'); },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (userId) => userService.resetPassword(userId),
+    onSuccess: (res) => {
+      setConfirmResetUser(null);
+      toast.success(res?.message || 'Senha resetada com sucesso!');
+    },
+    onError: (err) => { setConfirmResetUser(null); toast.error(err.message || 'Erro ao resetar senha'); },
   });
 
   // ── Mutations: Reports ─────────────────────────────────────────────────────
@@ -469,9 +482,7 @@ export default function Admin() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleDeleteUser = (userId, userName) => {
-    if (window.confirm(`Tem certeza que deseja excluir "${userName}"?`)) {
-      deleteMutation.mutate(userId);
-    }
+    setConfirmDeleteUser({ id: userId, name: userName });
   };
 
   const handleUpdateReport = (id, data) => {
@@ -653,19 +664,32 @@ export default function Admin() {
                             variant="outline"
                             size="sm"
                             onClick={() => setEditingUser(u)}
+                            title="Editar usuário"
                             className="border-[#2f456d]/40 text-[#2f456d] dark:text-blue-300 hover:bg-[#2f456d] hover:text-white dark:border-[#2f456d]/50 dark:hover:bg-[#2f456d]/50"
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>
                           {!isCurrentUser && (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteUser(u.id, u.full_name)}
-                              disabled={deleteMutation.isPending}
-                            >
-                              <UserX className="w-4 h-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                title="Resetar senha"
+                                onClick={() => setConfirmResetUser({ id: u.id, name: u.full_name })}
+                                className="border-amber-400/60 text-amber-700 dark:text-amber-400 hover:bg-amber-500 hover:text-white dark:border-amber-600/50 dark:hover:bg-amber-700/50"
+                              >
+                                <KeyRound className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                title="Excluir usuário"
+                                onClick={() => handleDeleteUser(u.id, u.full_name)}
+                                disabled={deleteMutation.isPending}
+                              >
+                                <UserX className="w-4 h-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -802,6 +826,62 @@ export default function Admin() {
         loading={updateMutation.isPending}
         editUser={editingUser}
       />
+
+      {/* Dialog: Confirmar exclusão */}
+      <Dialog open={!!confirmDeleteUser} onOpenChange={(open) => !open && setConfirmDeleteUser(null)}>
+        <DialogContent className="sm:max-w-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <UserX className="w-5 h-5" />
+              Confirmar Exclusão
+            </DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-400">
+              Tem certeza que deseja excluir o usuário <strong className="text-slate-900 dark:text-white">"{confirmDeleteUser?.name}"</strong>?
+              Esta ação é irreversível e remove todos os dados associados.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button variant="outline" onClick={() => setConfirmDeleteUser(null)} disabled={deleteMutation.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteMutation.mutate(confirmDeleteUser.id)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Excluindo...</> : <><UserX className="w-4 h-4 mr-2" />Excluir Usuário</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Confirmar reset de senha */}
+      <Dialog open={!!confirmResetUser} onOpenChange={(open) => !open && setConfirmResetUser(null)}>
+        <DialogContent className="sm:max-w-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <KeyRound className="w-5 h-5" />
+              Resetar Senha
+            </DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-400">
+              A senha de <strong className="text-slate-900 dark:text-white">"{confirmResetUser?.name}"</strong> será apagada.
+              No próximo login, ele precisará definir uma nova senha.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button variant="outline" onClick={() => setConfirmResetUser(null)} disabled={resetPasswordMutation.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => resetPasswordMutation.mutate(confirmResetUser.id)}
+              disabled={resetPasswordMutation.isPending}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {resetPasswordMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Resetando...</> : <><KeyRound className="w-4 h-4 mr-2" />Confirmar Reset</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

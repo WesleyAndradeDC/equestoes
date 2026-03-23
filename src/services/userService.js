@@ -21,6 +21,10 @@ class UserService {
   async delete(id) {
     return apiClient.delete(API_ENDPOINTS.USER_BY_ID(id));
   }
+
+  async resetPassword(id) {
+    return apiClient.post(API_ENDPOINTS.USER_RESET_PASSWORD(id));
+  }
 }
 
 export const userService = new UserService();

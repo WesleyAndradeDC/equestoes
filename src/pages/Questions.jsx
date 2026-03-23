@@ -308,7 +308,10 @@ export default function Questions() {
       {/* Filter Panel — horizontal no topo */}
       <FilterPanel
         filters={filters}
-        onFilterChange={setFilters}
+        onFilterChange={(newFilters) => {
+          setFilters(newFilters);
+          setCurrentPage(1);
+        }}
         onClearFilters={handleClearFilters}
         availableDisciplines={availableDisciplines}
         availableSubjects={availableSubjects}

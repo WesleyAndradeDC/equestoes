@@ -46,19 +46,13 @@ export default function Flashcards() {
 
   const { data: flashcards = [], isLoading } = useQuery({
     queryKey: ['flashcards'],
-    queryFn: async () => {
-      const res = await apiClient.get(API_ENDPOINTS.FLASHCARDS);
-      return res.data;
-    },
+    queryFn: () => apiClient.get(API_ENDPOINTS.FLASHCARDS),
     staleTime: 2 * 60 * 1000,
   });
 
   const { data: dueCards = [] } = useQuery({
     queryKey: ['flashcards-due'],
-    queryFn: async () => {
-      const res = await apiClient.get(API_ENDPOINTS.FLASHCARDS_DUE);
-      return res.data;
-    },
+    queryFn: () => apiClient.get(API_ENDPOINTS.FLASHCARDS_DUE),
     staleTime: 60 * 1000,
   });
 
