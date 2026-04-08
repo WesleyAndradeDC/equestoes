@@ -57,14 +57,19 @@ const allowedOrigins = [
   'https://gconcursos-frontend.onrender.com',
   'https://www.app.equestoes.com.br',
   'https://app.equestoes.com.br',
+  'https://app.elevacursos.com.br',
+  'https://www.app.elevacursos.com.br',
+  'https://elevacursos.com.br',
+  'https://www.elevacursos.com.br',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 const isAllowedOrigin = (origin) => {
   if (!origin) return true;
   if (allowedOrigins.includes(origin)) return true;
-  // Aceita qualquer subdomínio de equestoes.com.br
+  // Aceita qualquer subdomínio de equestoes.com.br ou elevacursos.com.br
   if (/^https?:\/\/([\w-]+\.)*equestoes\.com\.br$/.test(origin)) return true;
+  if (/^https?:\/\/([\w-]+\.)*elevacursos\.com\.br$/.test(origin)) return true;
   // Aceita deploys do próprio projeto no Render
   if (/^https:\/\/e-questoes[\w-]*\.onrender\.com$/.test(origin)) return true;
   return false;
