@@ -5,11 +5,14 @@
  */
 
 // ─── Mapeamento de produto → tipo de assinatura ────────────────────────────
-// IDs exclusivos de cada plano — NÃO devem se sobrepor.
-// Cada product_id deve pertencer a apenas um plano.
+// Todos os product_ids abaixo concedem acesso como "Aluno Eleva".
+// Para adicionar um novo produto, basta incluir o ID neste array.
 export const PRODUCT_MAPPING = {
-  // Aluno Eleva — acesso completo à plataforma
-  'Aluno Eleva': [35416, 35418, 35413, 47507, 47485, 19479, 4252, 28237, 28239, 28240, 45748, 47818, 47825],
+  'Aluno Eleva': [
+    1084, 1093, 1101, 1191, 1602, 1635, 1638, 1783,
+    2098, 2357, 2359, 2361, 2363, 2365, 2372, 2377,
+    2382, 2387, 2452,
+  ],
 };
 
 // ─── Status que concedem acesso à plataforma ──────────────────────────────
