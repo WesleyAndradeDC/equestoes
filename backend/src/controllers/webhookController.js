@@ -1,417 +1,64 @@
+/**
+ * webhookController.js
+ *
+ * Contém o handler do WooCommerce Memberships (controle de acesso ao plano).
+ *
+ * Os outros handlers ficam em controllers dedicados:
+ *   • Order webhook      → orderWebhookController.js
+ *   • Subscription hook  → subscriptionWebhookController.js
+ *
+ * Configuração no WooCommerce:
+ *   Plugin : WooCommerce Memberships
+ *   Tópico : User Membership created
+ *            User Membership updated
+ *            User Membership deleted
+ *   URL    : POST https://e-questoes-api.onrender.com/api/webhook/membership
+ *   Segredo: WOO_MEMBERSHIP_WEBHOOK_SECRET (variável de ambiente no Render)
+ */
+
 import prisma from '../config/database.js';
 import { syncUserSubscriptionCache } from '../utils/subscriptionUtils.js';
-
-// Mapeamento de product_ids para o tipo de assinatura único "Aluno Eleva"
-const PRODUCT_MAPPING = {
-  'Aluno Eleva': [
-    35416, 35418, 35413, 47507, 47485, // planos básicos
-    19479, 4252, 28237, 28239, 28240, 45748, 47818, // planos completos + PRF 2026
-    47825, // Banco do Brasil
-  ],
-};
-
-/**
- * Identifica o tipo de assinatura baseado nos product_ids
- * @param {Array} lineItems - Array de line_items do WooCommerce
- * @returns {string|null} - Tipo de assinatura identificado ou null
- */
-function identifySubscriptionType(lineItems) {
-  if (!Array.isArray(lineItems) || lineItems.length === 0) {
-    return null;
-  }
-
-  // Extrair todos os product_ids do pedido
-  const productIds = lineItems
-    .map(item => Number(item.product_id))
-    .filter(id => !isNaN(id) && id > 0);
-
-  if (productIds.length === 0) {
-    return null;
-  }
-
-  console.log('🔍 Product IDs encontrados:', productIds);
-
-  if (productIds.some(id => PRODUCT_MAPPING['Aluno Eleva'].includes(id))) {
-    console.log('✅ Tipo identificado: Aluno Eleva');
-    return 'Aluno Eleva';
-  }
-
-  console.log('⚠️ Nenhum product_id identificado');
-  return null;
-}
-
-/**
- * Extrai dados do payload nativo do WooCommerce
- * @param {Object} payload - Payload do webhook
- * @returns {Object|null} - { email, full_name, subscription_type } ou null se inválido
- */
-function extractWooCommerceData(payload) {
-  // Verificar se é payload nativo do WooCommerce
-  if (!payload.status || !payload.billing) {
-    return null;
-  }
-
-  // Processar apenas pedidos completos
-  if (payload.status !== 'completed') {
-    console.log(`ℹ️ Pedido ${payload.id} ignorado - status: ${payload.status}`);
-    return { skip: true, reason: `Status não é 'completed': ${payload.status}` };
-  }
-
-  // Extrair email
-  const email = payload.billing?.email;
-  if (!email) {
-    console.error('❌ Email não encontrado no billing');
-    return { error: true, message: 'Email não encontrado no billing' };
-  }
-
-  // Extrair nome completo
-  const firstName = payload.billing?.first_name || '';
-  const lastName = payload.billing?.last_name || '';
-  const full_name = `${firstName} ${lastName}`.trim();
-
-  if (!full_name) {
-    console.error('❌ Nome completo não encontrado no billing');
-    return { error: true, message: 'Nome completo não encontrado no billing' };
-  }
-
-  // Identificar tipo de assinatura
-  const subscription_type = identifySubscriptionType(payload.line_items);
-
-  return {
-    email,
-    full_name,
-    subscription_type
-  };
-}
-
-/**
- * Extrai dados do formato antigo (compatibilidade)
- * @param {Object} payload - Payload do webhook
- * @returns {Object|null} - { email, full_name, subscription_type } ou null se inválido
- */
-function extractLegacyData(payload) {
-  const { email, full_name, subscription_type } = payload;
-
-  if (!email || !full_name) {
-    return null;
-  }
-
-  return {
-    email,
-    full_name,
-    subscription_type
-  };
-}
-
-// WooCommerce Webhook - Registrar novo aluno
-export const woocommerceNewStudent = async (req, res) => {
-  try {
-    console.log('📦 Webhook WooCommerce recebido');
-    console.log('📋 Payload (resumo):', {
-      id: req.body.id,
-      status: req.body.status,
-      has_billing: !!req.body.billing,
-      has_line_items: Array.isArray(req.body.line_items),
-      line_items_count: req.body.line_items?.length || 0
-    });
-
-    let userData = null;
-
-    // Tentar extrair dados do formato nativo do WooCommerce
-    const wooCommerceData = extractWooCommerceData(req.body);
-    
-    if (wooCommerceData?.skip) {
-      // Pedido não é "completed" - retornar 200 e encerrar (não é erro)
-      console.log(`ℹ️ Webhook ignorado: ${wooCommerceData.reason}`);
-      return res.status(200).json({
-        message: 'Webhook recebido mas não processado',
-        reason: wooCommerceData.reason
-      });
-    }
-
-    if (wooCommerceData?.error) {
-      // Erro na extração (email não encontrado)
-      console.error('❌ Erro ao extrair dados:', wooCommerceData.message);
-      return res.status(400).json({
-        error: wooCommerceData.message
-      });
-    }
-
-    if (wooCommerceData) {
-      // Dados extraídos do formato nativo
-      userData = wooCommerceData;
-      
-      // Se nenhum product_id foi identificado, retornar 200 e ignorar
-      if (!userData.subscription_type) {
-        console.log('ℹ️ Nenhum product_id identificado - webhook ignorado');
-        return res.status(200).json({
-          message: 'Webhook recebido mas nenhum product_id identificado',
-          product_ids: req.body.line_items?.map(item => item.product_id) || []
-        });
-      }
-    } else {
-      // Tentar formato antigo (compatibilidade)
-      userData = extractLegacyData(req.body);
-      
-      if (!userData) {
-        console.error('❌ Webhook: Formato não reconhecido');
-        return res.status(400).json({
-          error: 'Formato de payload não reconhecido. Esperado: formato WooCommerce nativo ou formato legado { email, full_name, subscription_type }'
-        });
-      }
-    }
-
-    const { email, full_name, subscription_type } = userData;
-
-    // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      console.error('❌ Webhook: Email inválido:', email);
-      return res.status(400).json({ error: 'Formato de email inválido' });
-    }
-
-    console.log('📝 Dados extraídos:', {
-      email,
-      full_name,
-      subscription_type
-    });
-
-    // Verificar se usuário já existe
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      console.log('⚠️ Webhook: Usuário já existe:', email);
-      
-      // Atualizar dados se necessário (nome ou subscription_type mudou)
-      const updateData = {};
-      if (full_name && full_name !== existingUser.full_name) {
-        updateData.full_name = full_name;
-      }
-      if (subscription_type && subscription_type !== existingUser.subscription_type) {
-        updateData.subscription_type = subscription_type;
-      }
-
-      // Se houver mudanças, atualizar
-      if (Object.keys(updateData).length > 0) {
-        const updatedUser = await prisma.user.update({
-          where: { email },
-          data: updateData,
-          select: {
-            id: true,
-            email: true,
-            full_name: true,
-            subscription_type: true,
-            first_login: true,
-            created_at: true
-          }
-        });
-        
-        console.log('✅ Webhook: Usuário atualizado:', updatedUser.email);
-        return res.status(200).json({
-          message: 'Usuário atualizado com sucesso',
-          user: updatedUser,
-          updated: true
-        });
-      }
-
-      return res.status(200).json({
-        message: 'Usuário já existe',
-        user: {
-          id: existingUser.id,
-          email: existingUser.email,
-          full_name: existingUser.full_name,
-          subscription_type: existingUser.subscription_type
-        },
-        updated: false
-      });
-    }
-
-    // Criar novo usuário
-    const newUser = await prisma.user.create({
-      data: {
-        email,
-        full_name,
-        subscription_type: subscription_type || 'Aluno Eleva',
-        role: 'user',
-        first_login: true,
-        password_hash: null // Será definido no primeiro acesso
-      },
-      select: {
-        id: true,
-        email: true,
-        full_name: true,
-        role: true,
-        subscription_type: true,
-        first_login: true,
-        created_at: true
-      }
-    });
-
-    console.log('✅ Webhook: Novo usuário criado:', newUser.email);
-
-    res.status(201).json({
-      message: 'Usuário cadastrado com sucesso',
-      user: newUser
-    });
-  } catch (error) {
-    console.error('❌ Webhook error:', error);
-    console.error('❌ Stack trace:', error.stack);
-    
-    // Prisma unique constraint violation
-    if (error.code === 'P2002') {
-      return res.status(409).json({ 
-        error: 'Email já cadastrado',
-        field: error.meta?.target?.[0]
-      });
-    }
-
-    res.status(500).json({ 
-      error: 'Erro ao processar webhook',
-      details: error.message 
-    });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// subscriptionWebhook
-//
-// Processa webhooks do WooCommerce Subscriptions (criada / atualizada / deletada).
-//
-// O que faz:
-//   • Extrai id, status e email do payload
-//   • Localiza o usuário pelo email (se não encontrado → 200 silencioso)
-//   • Atualiza user.subscription_status e user.subscription_active
-//   • Faz upsert na tabela subscriptions (mantém compatibilidade com o histórico)
-//
-// Configuração no WooCommerce:
-//   Tópico : Subscription created | Subscription updated | Subscription deleted
-//   URL    : POST /api/webhook/subscription
-//   Segredo: WOO_WEBHOOK_SECRET (opcional, mas recomendado)
-// ─────────────────────────────────────────────────────────────────────────────
-export const subscriptionWebhook = async (req, res) => {
-  try {
-    const payload = req.body;
-    const topic   = req.headers['x-wc-webhook-topic'] ?? 'subscription.unknown';
-
-    console.log('📋 Subscription Webhook recebido:', {
-      id:     payload.id,
-      status: payload.status,
-      topic,
-      email:  payload.billing?.email,
-    });
-
-    // Email obrigatório
-    const email = payload.billing?.email?.toLowerCase().trim();
-    if (!email) {
-      console.warn('⚠️ Subscription Webhook: email não encontrado no payload');
-      return res.status(200).json({ message: 'Webhook recebido — email ausente, ignorado' });
-    }
-
-    // Buscar usuário; se não existir, retornar 200 sem erro
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      console.log(`ℹ️ Subscription Webhook: usuário ${email} não encontrado — ignorando`);
-      return res.status(200).json({ message: 'Usuário não encontrado — webhook ignorado' });
-    }
-
-    // Normalizar status
-    const VALID_STATUSES = new Set([
-      'active', 'pending-cancel', 'on-hold', 'cancelled', 'expired', 'pending',
-    ]);
-    const status         = VALID_STATUSES.has(payload.status) ? payload.status : 'inactive';
-    const isActive       = ['active', 'pending-cancel'].includes(status);
-    const wooId          = payload.id ? String(payload.id) : null;
-
-    // Atualizar cache do usuário
-    await prisma.user.update({
-      where: { email },
-      data:  {
-        subscription_status: status,
-        subscription_active: isActive,
-      },
-    });
-
-    // Upsert na tabela subscriptions (mantém compatibilidade com o histórico)
-    if (wooId) {
-      await prisma.subscription.upsert({
-        where:  { woo_subscription_id: wooId },
-        update: { status, updated_at: new Date() },
-        create: {
-          user_id:             user.id,
-          woo_subscription_id: wooId,
-          status,
-          started_at:          new Date(),
-        },
-      });
-    }
-
-    console.log(`✅ Subscription Webhook: ${email} → status=${status} ativo=${isActive}`);
-
-    return res.status(200).json({
-      message:             'Subscription processada com sucesso',
-      email,
-      status,
-      subscription_active: isActive,
-    });
-
-  } catch (error) {
-    console.error('❌ Subscription Webhook error:', error);
-    if (error.code === 'P2002') {
-      return res.status(200).json({ message: 'Subscription já processada (idempotente)' });
-    }
-    res.status(500).json({ error: 'Erro ao processar subscription webhook' });
-  }
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // _planNameToSubscriptionType
 // Converte o nome do plano WC Memberships para o subscription_type interno.
+// Hoje existe apenas um tipo de aluno: "Aluno Eleva".
 // ─────────────────────────────────────────────────────────────────────────────
 function _planNameToSubscriptionType(planName) {
   if (!planName) return 'Aluno Eleva';
-  const lower = planName.toLowerCase();
-  if (lower.includes('cascas'))                              return 'Aluno Eleva';
-  if (lower.includes('banco do brasil') || lower.includes('bb')) return 'Aluno Eleva';
-  if (lower.includes('prf'))                                 return 'Aluno Eleva'; // PRF acessa como Cascas
-  if (lower.includes('pedrão') || lower.includes('pedrao'))  return 'Aluno Eleva';
-  return 'Aluno Eleva'; // padrão seguro
+  return 'Aluno Eleva'; // único tipo de assinatura de aluno no sistema
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // membershipWebhook
 //
-// Processa webhooks do WooCommerce Memberships (associação criada / atualizada / deletada).
+// Processa webhooks do WooCommerce Memberships.
 //
 // O que faz:
-//   • Extrai email, status, plan.name e end_date do payload
-//   • Localiza o usuário pelo email (se não encontrado → 200 silencioso)
-//   • Atualiza os campos membership_* no modelo User
-//   • Evento "deleted" → força membership_active = false
+//   1. Extrai customer_id, order_id, plan_name, status e datas do payload
+//   2. Localiza o usuário pelo order_id (via tabela subscriptions)
+//   3. Fallback: consulta a WC REST API pelo customer_id para obter email/nome
+//      e cria o usuário se ainda não existir
+//   4. Atualiza os campos membership_* no modelo User
+//   5. Sincroniza o cache subscription_status / subscription_active
 //
-// Configuração no WooCommerce:
-//   Tópico : User Membership created | User Membership updated | User Membership deleted
-//   URL    : POST /api/webhook/membership
-//   Segredo: WOO_MEMBERSHIP_WEBHOOK_SECRET (opcional, mas recomendado)
+// Payload real confirmado nos logs (WC Memberships):
+//   id, customer_id, plan_id, plan_name, status, order_id, product_id,
+//   start_date, start_date_gmt, end_date, end_date_gmt,
+//   cancelled_date, cancelled_date_gmt
+//   ⚠️  NÃO há campo de email no payload — usamos order_id como chave.
 //
-// Campos atualizados no User:
-//   membership_status     → status bruto do WC Memberships
-//   membership_active     → true apenas quando status === "active"
-//   membership_expires_at → data de expiração (null = sem prazo)
-//   membership_plan       → nome do plano (ex.: "Aluno Eleva")
+// Variáveis de ambiente necessárias (Render):
+//   WOO_SITE_URL            = https://equestoes.com.br
+//   WOO_CONSUMER_KEY        = ck_xxxxxxxxxxxxxxxx
+//   WOO_CONSUMER_SECRET     = cs_xxxxxxxxxxxxxxxx
+//   WOO_MEMBERSHIP_WEBHOOK_SECRET = (opcional, mas recomendado)
 // ─────────────────────────────────────────────────────────────────────────────
 export const membershipWebhook = async (req, res) => {
   try {
     const payload = req.body;
     const topic   = req.headers['x-wc-webhook-topic'] ?? '';
 
-    // ── Estrutura real do payload WooCommerce Memberships ──────────────────
-    // Campos relevantes confirmados nos logs:
-    //   id, customer_id, plan_id, plan_name, status, order_id, product_id,
-    //   start_date, start_date_gmt, end_date, end_date_gmt,
-    //   cancelled_date, cancelled_date_gmt
-    // IMPORTANTE: NÃO há campo de email — precisamos buscar pelo order_id.
     console.log('🎫 Membership Webhook recebido:', {
       id:          payload?.id,
       customer_id: payload?.customer_id,
@@ -426,10 +73,10 @@ export const membershipWebhook = async (req, res) => {
       topic.toLowerCase().includes('deleted') ||
       payload?.status === 'deleted';
 
-    // ── Localizar usuário pelo order_id (via tabela subscriptions) ─────────
+    // ── 1. Localizar usuário pelo order_id ───────────────────────────────────
     // O WC Memberships NÃO envia email no payload.
-    // Estratégia: buscar a subscription gerada pelo order webhook (order_id
-    // corresponde ao woo_order_id registrado quando o pedido foi completado).
+    // Estratégia: cruzar o order_id com woo_order_id na tabela subscriptions,
+    // registrado quando o pedido (order webhook) foi processado.
     let user = null;
     const orderId = payload?.order_id ? String(payload.order_id) : null;
 
@@ -444,15 +91,10 @@ export const membershipWebhook = async (req, res) => {
       }
     }
 
-    // ── Fallback: WooCommerce REST API ────────────────────────────────────
+    // ── 2. Fallback: consulta WC REST API pelo customer_id ───────────────────
     // Ativado quando o usuário não é encontrado pelo order_id.
-    // Usa WC REST API para buscar email + nome pelo customer_id.
+    // Cenário comum: membership chegou antes do order.completed.
     // Se o usuário não existir no banco → CRIA automaticamente.
-    //
-    // Requer no .env do Render:
-    //   WOO_SITE_URL        = https://equestoes.com.br
-    //   WOO_CONSUMER_KEY    = ck_xxxxxxxxxxxxxxxx
-    //   WOO_CONSUMER_SECRET = cs_xxxxxxxxxxxxxxxx
     if (!user && payload?.customer_id) {
       if (process.env.WOO_CONSUMER_KEY && process.env.WOO_CONSUMER_SECRET) {
         try {
@@ -466,7 +108,7 @@ export const membershipWebhook = async (req, res) => {
 
           const response = await fetch(apiUrl, {
             headers: { Authorization: `Basic ${auth}` },
-            signal:  AbortSignal.timeout(8000), // timeout de 8s
+            signal:  AbortSignal.timeout(8000),
           });
 
           if (response.ok) {
@@ -477,29 +119,26 @@ export const membershipWebhook = async (req, res) => {
             const custFullName  = `${custFirstName} ${custLastName}`.trim();
 
             if (custEmail) {
-              // 1. Tentar encontrar usuário já existente
               user = await prisma.user.findUnique({ where: { email: custEmail } });
 
               if (user) {
                 console.log(`✅ Usuário encontrado via WC API: ${custEmail}`);
-
               } else if (custFullName) {
-                // 2. Criar automaticamente — o membership chegou antes do order.completed
-                const subscriptionType = _planNameToSubscriptionType(payload.plan_name);
+                // Membership chegou antes do order.completed → criar usuário antecipadamente
                 user = await prisma.user.create({
                   data: {
                     email:               custEmail,
                     full_name:           custFullName,
-                    subscription_type:   subscriptionType,
-                    subscription_status: 'pending', // será atualizado após processar membership
+                    subscription_type:   _planNameToSubscriptionType(payload.plan_name),
+                    subscription_status: 'pending',
                     role:                'user',
                     first_login:         true,
                     password_hash:       null,
                   },
                 });
-                console.log(`✅ Usuário CRIADO via WC API (chegou antes do order.completed): ${custEmail}`);
+                console.log(`✅ Usuário criado via WC API (antes do order.completed): ${custEmail}`);
               } else {
-                console.warn(`⚠️ WC API: email ${custEmail} encontrado mas sem nome — não é possível criar usuário`);
+                console.warn(`⚠️ WC API: email ${custEmail} encontrado mas sem nome — criação ignorada`);
               }
             }
           } else {
@@ -510,37 +149,35 @@ export const membershipWebhook = async (req, res) => {
         }
       } else {
         console.warn(
-          '⚠️ WOO_CONSUMER_KEY / WOO_CONSUMER_SECRET não configurados no .env — fallback WC API desabilitado.',
+          '⚠️ WOO_CONSUMER_KEY / WOO_CONSUMER_SECRET ausentes no .env — fallback WC API desabilitado.',
         );
       }
     }
 
     if (!user) {
       console.warn(
-        `⚠️ Membership Webhook: usuário não encontrado e não foi possível criar — ` +
+        `⚠️ Membership Webhook: usuário não localizado — ` +
         `order_id=${orderId}, customer_id=${payload?.customer_id}`,
       );
       return res.status(200).json({ message: 'Usuário não encontrado — webhook ignorado' });
     }
 
-    // ── Evento de exclusão / remoção da membership ────────────────────────
+    // ── 3. Evento de exclusão / remoção da membership ────────────────────────
     if (isDeleted) {
       await prisma.user.update({
         where: { id: user.id },
         data:  { membership_active: false, membership_status: 'deleted' },
       });
-      console.log(`✅ Membership Webhook: membership removida para ${user.email}`);
-      return res.status(200).json({ message: 'Membership removida com sucesso', email: user.email });
+      console.log(`✅ Membership removida para ${user.email}`);
+      return res.status(200).json({ message: 'Membership removida', email: user.email });
     }
 
-    // ── Extrair dados do payload (campos reais confirmados nos logs) ───────
+    // ── 4. Extrair dados do payload ──────────────────────────────────────────
     const status   = payload?.status ?? 'inactive';
     const isActive = status === 'active';
-
-    // plan_name vem como campo direto (não como plan.name)
     const planName = payload?.plan_name ?? null;
 
-    // Datas: preferir _gmt para ter o UTC correto
+    // Preferir datas em GMT para garantir UTC correto
     const rawEndDate   = payload?.end_date_gmt   ?? payload?.end_date   ?? null;
     const rawStartDate = payload?.start_date_gmt ?? payload?.start_date ?? null;
 
@@ -550,7 +187,7 @@ export const membershipWebhook = async (req, res) => {
     const validEndDate   = endDate   && !isNaN(endDate.getTime())   ? endDate   : null;
     const validStartDate = startDate && !isNaN(startDate.getTime()) ? startDate : null;
 
-    // ── Atualizar campos de membership no usuário ─────────────────────────
+    // ── 5. Atualizar campos membership no usuário ────────────────────────────
     await prisma.user.update({
       where: { id: user.id },
       data:  {
@@ -561,8 +198,7 @@ export const membershipWebhook = async (req, res) => {
       },
     });
 
-    // ── Atualizar subscription com as datas de expiração ──────────────────
-    // Garante que expires_at e started_at sejam preenchidos na tabela subscriptions
+    // ── 6. Atualizar subscription com as datas de expiração ─────────────────
     if (orderId) {
       const existingSub = await prisma.subscription.findFirst({
         where: { woo_order_id: orderId },
@@ -578,13 +214,13 @@ export const membershipWebhook = async (req, res) => {
             updated_at:  new Date(),
           },
         });
-        console.log(`✅ Subscription ${existingSub.id} atualizada com expires_at=${validEndDate?.toISOString() ?? 'null'}`);
+        console.log(`✅ Subscription ${existingSub.id} atualizada — expires_at=${validEndDate?.toISOString() ?? 'null'}`);
       } else {
-        // Subscription ainda não existe (membership chegou antes do order) — criar
+        // Subscription ainda não existe → criar
         await prisma.subscription.create({
           data: {
-            user_id:          user.id,
-            woo_order_id:     orderId,
+            user_id:           user.id,
+            woo_order_id:      orderId,
             status,
             subscription_type: planName ?? user.subscription_type ?? 'Aluno Eleva',
             started_at:        validStartDate ?? new Date(),
@@ -595,11 +231,11 @@ export const membershipWebhook = async (req, res) => {
       }
     }
 
-    // ── Sincronizar cache subscription_status + subscription_active ────────
+    // ── 7. Sincronizar cache subscription_active ─────────────────────────────
     await syncUserSubscriptionCache(prisma, user.id);
 
     console.log(
-      `✅ Membership Webhook: ${user.email} → status=${status} ativo=${isActive} ` +
+      `✅ Membership: ${user.email} → status=${status} ativo=${isActive} ` +
       `plano="${planName}" expira=${validEndDate?.toISOString() ?? 'sem prazo'}`,
     );
 
@@ -617,16 +253,3 @@ export const membershipWebhook = async (req, res) => {
     res.status(500).json({ error: 'Erro ao processar membership webhook' });
   }
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// testWebhook
-// ─────────────────────────────────────────────────────────────────────────────
-// Webhook de teste
-export const testWebhook = async (req, res) => {
-  res.json({
-    message: 'Webhook está funcionando!',
-    timestamp: new Date().toISOString(),
-    body: req.body
-  });
-};
-
