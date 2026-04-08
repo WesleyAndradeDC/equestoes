@@ -60,15 +60,26 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  // Aceita qualquer subdomínio de equestoes.com.br
+  if (/^https?:\/\/([\w-]+\.)*equestoes\.com\.br$/.test(origin)) return true;
+  // Aceita deploys do próprio projeto no Render
+  if (/^https:\/\/e-questoes[\w-]*\.onrender\.com$/.test(origin)) return true;
+  return false;
+};
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Permitir sem origin (apps mobile, Postman, etc.)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        // Rejeitar com false (não com Error) para o Express ainda enviar
+        // os cabeçalhos CORS corretos na resposta de rejeição — evita que o
+        // browser mostre "Failed to fetch" ao invés de um erro CORS legível.
+        callback(null, false);
       }
     },
     credentials: true,

@@ -36,6 +36,10 @@ class ApiClient {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
 
+    // Retry automático para erros de rede (cold start do Render free tier)
+    const maxRetries = options._retryCount ?? 2;
+    const currentAttempt = options._attempt ?? 0;
+
     try {
       const response = await fetch(url, config);
 
@@ -45,7 +49,6 @@ class ApiClient {
         if (refreshed) {
           return this.request(endpoint, { ...options, skipRetry: true });
         } else {
-          // Remove tokens e lança erro para ser tratado pelo AuthContext/ProtectedRoute
           this.removeToken();
           throw new Error('Sessão expirada. Faça login novamente.');
         }
@@ -59,6 +62,22 @@ class ApiClient {
 
       return data;
     } catch (error) {
+      // Erro de rede (Failed to fetch) — pode ser cold start do servidor
+      const isNetworkError = error instanceof TypeError && error.message === 'Failed to fetch';
+
+      if (isNetworkError && currentAttempt < maxRetries) {
+        const delay = (currentAttempt + 1) * 3000; // 3s, 6s...
+        if (isDev) {
+          console.warn(`[apiClient] Rede indisponível, tentando novamente em ${delay / 1000}s... (${currentAttempt + 1}/${maxRetries})`);
+        }
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return this.request(endpoint, { ...options, _attempt: currentAttempt + 1, _retryCount: maxRetries });
+      }
+
+      if (isNetworkError) {
+        throw new Error('Não foi possível conectar ao servidor. Verifique sua internet ou aguarde alguns segundos e tente novamente.');
+      }
+
       if (isDev) {
         console.error(`API Error [${options.method || 'GET'} ${endpoint}]:`, error.message);
       }
