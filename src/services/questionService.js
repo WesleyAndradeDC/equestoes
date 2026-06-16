@@ -2,35 +2,30 @@ import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '@/config/api';
 
 class QuestionService {
-  async list(orderBy, limit) {
-    console.log('📡 QuestionService.list() chamado', { orderBy, limit });
-    console.log('🔗 API_ENDPOINTS.QUESTIONS:', API_ENDPOINTS.QUESTIONS);
-    
+  async listPaginated({ page = 1, limit = 10, ...filters } = {}) {
     const params = new URLSearchParams();
-    if (limit) params.append('limit', limit);
-    
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const url = `${API_ENDPOINTS.QUESTIONS}${query}`;
-    
-    console.log('🌐 URL completa:', url);
-    
-    try {
-      const result = await apiClient.get(url);
-      console.log('✅ Resposta recebida:', {
-        type: typeof result,
-        isArray: Array.isArray(result),
-        length: result?.length,
-        first: result?.[0]
-      });
-      return result;
-    } catch (error) {
-      console.error('❌ Erro no QuestionService:', error);
-      throw error;
-    }
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        params.append(key, value);
+      }
+    });
+
+    return apiClient.get(`${API_ENDPOINTS.QUESTIONS}?${params.toString()}`);
+  }
+
+  async list(orderBy, limit) {
+    return this.listPaginated({ page: 1, limit: limit || 10 });
   }
 
   async get(id) {
     return apiClient.get(API_ENDPOINTS.QUESTION_BY_ID(id));
+  }
+
+  async getByCode(code) {
+    return apiClient.get(API_ENDPOINTS.QUESTION_BY_CODE(code));
   }
 
   async create(data) {
@@ -50,20 +45,9 @@ class QuestionService {
   }
 
   async filter(filters) {
-    const params = new URLSearchParams();
-    Object.keys(filters).forEach(key => {
-      if (filters[key] !== null && filters[key] !== undefined) {
-        params.append(key, filters[key]);
-      }
-    });
-    
-    const query = params.toString() ? `?${params.toString()}` : '';
-    return apiClient.get(`${API_ENDPOINTS.QUESTIONS}${query}`);
+    return this.listPaginated({ page: 1, limit: 10, ...filters });
   }
 }
 
 export const questionService = new QuestionService();
 export default questionService;
-
-
-

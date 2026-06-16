@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,11 +46,25 @@ export default function ReviewQuestion() {
     });
   }, []);
 
-  const { data: questions = [] } = useQuery({
-    queryKey: ['questions'],
-    queryFn: () => base44.entities.Question.list(),
-    initialData: []
-  });
+  const handleSearch = async () => {
+    if (!searchCode.trim()) {
+      toast.error('Digite o código da questão');
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const found = await base44.entities.Question.getByCode(searchCode.trim());
+      setSelectedQuestion(found);
+      setEditedQuestion({ ...found });
+    } catch {
+      toast.error('Questão não encontrada');
+      setSelectedQuestion(null);
+      setEditedQuestion(null);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const updateQuestionMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Question.update(id, data),
@@ -63,33 +77,11 @@ export default function ReviewQuestion() {
     },
     onError: () => {
       toast.error('Erro ao atualizar questão');
-    }
+    },
   });
 
   // Check if user has permission
   const hasPermission = user?.role === 'admin' || user?.subscription_type === 'Professor';
-
-  const handleSearch = () => {
-    if (!searchCode.trim()) {
-      toast.error('Digite o código da questão');
-      return;
-    }
-
-    setIsSearching(true);
-    const found = questions.find((q) =>
-    q.code?.toLowerCase() === searchCode.trim().toLowerCase()
-    );
-
-    if (found) {
-      setSelectedQuestion(found);
-      setEditedQuestion({ ...found });
-    } else {
-      toast.error('Questão não encontrada');
-      setSelectedQuestion(null);
-      setEditedQuestion(null);
-    }
-    setIsSearching(false);
-  };
 
   const handleSave = () => {
     if (!editedQuestion) return;

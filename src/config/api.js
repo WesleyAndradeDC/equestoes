@@ -22,6 +22,7 @@ export const API_ENDPOINTS = {
   QUESTIONS: '/questions',
   QUESTION_FILTERS: '/questions/filters',
   QUESTION_BY_ID: (id) => `/questions/${id}`,
+  QUESTION_BY_CODE: (code) => `/questions/by-code/${encodeURIComponent(code)}`,
 
   // Attempts
   ATTEMPTS: '/attempts',

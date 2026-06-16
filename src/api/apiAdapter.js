@@ -20,7 +20,9 @@ const authAdapter = {
 // Entities adapters
 const Question = {
   list: (orderBy, limit) => questionService.list(orderBy, limit),
+  listPaginated: (params) => questionService.listPaginated(params),
   get: (id) => questionService.get(id),
+  getByCode: (code) => questionService.getByCode(code),
   create: (data) => questionService.create(data),
   update: (id, data) => questionService.update(id, data),
   delete: (id) => questionService.delete(id),

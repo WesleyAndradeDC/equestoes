@@ -18,7 +18,19 @@ export const listAttempts = async (req, res) => {
     const attempts = await prisma.attempt.findMany({
       where,
       orderBy,
-      take: limit ? parseInt(limit) : undefined
+      take: limit ? parseInt(limit) : undefined,
+      include: {
+        question: {
+          select: {
+            id: true,
+            discipline: true,
+            subjects: true,
+            code: true,
+            difficulty: true,
+            exam_board: true,
+          },
+        },
+      },
     });
 
     res.json(attempts);
@@ -65,7 +77,19 @@ export const getUserAttempts = async (req, res) => {
       where: { user_id: req.user.id },
       orderBy: { created_date: 'desc' },
       take: limit ? parseInt(limit) : undefined,
-      skip: offset ? parseInt(offset) : undefined
+      skip: offset ? parseInt(offset) : undefined,
+      include: {
+        question: {
+          select: {
+            id: true,
+            discipline: true,
+            subjects: true,
+            code: true,
+            difficulty: true,
+            exam_board: true,
+          },
+        },
+      },
     });
 
     res.json(attempts);

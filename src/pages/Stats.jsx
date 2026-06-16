@@ -103,12 +103,6 @@ export default function Stats() {
     return allAttempts.filter(a => a.user_id === user.id);
   }, [allAttempts, user?.id]);
 
-  const { data: questions = [] } = useQuery({
-    queryKey: ['questions'],
-    queryFn: () => base44.entities.Question.list(),
-    staleTime: 0,
-  });
-
   const filteredAttempts = React.useMemo(() => {
     const userAttempts = attempts.filter(a => a.created_by === user?.email || a.user_id === user?.id);
     if (dateRange === 'all') return userAttempts;
@@ -168,51 +162,51 @@ export default function Stats() {
   const disciplinePerformance = React.useMemo(() => {
     const map = {};
     filteredAttempts.forEach(a => {
-      const q = questions.find(q => q.id === a.question_id);
-      if (!q?.discipline) return;
-      if (!map[q.discipline]) map[q.discipline] = { discipline: q.discipline, correct: 0, total: 0 };
-      map[q.discipline].total++;
-      if (a.is_correct) map[q.discipline].correct++;
+      const discipline = a.question?.discipline;
+      if (!discipline) return;
+      if (!map[discipline]) map[discipline] = { discipline, correct: 0, total: 0 };
+      map[discipline].total++;
+      if (a.is_correct) map[discipline].correct++;
     });
     return Object.values(map).map(d => ({ ...d, accuracy: d.total > 0 ? safeNumber((d.correct / d.total * 100).toFixed(1)) : 0 })).sort((a, b) => b.accuracy - a.accuracy);
-  }, [filteredAttempts, questions]);
+  }, [filteredAttempts]);
 
   const subjectPerformance = React.useMemo(() => {
     const map = {};
     filteredAttempts.forEach(a => {
-      const q = questions.find(q => q.id === a.question_id);
-      if (!q?.subjects) return;
-      q.subjects.forEach(s => {
+      const subjects = a.question?.subjects;
+      if (!subjects) return;
+      subjects.forEach(s => {
         if (!map[s]) map[s] = { subject: s, correct: 0, total: 0 };
         map[s].total++;
         if (a.is_correct) map[s].correct++;
       });
     });
     return Object.values(map).map(s => ({ ...s, accuracy: s.total > 0 ? safeNumber((s.correct / s.total * 100).toFixed(1)) : 0 })).sort((a, b) => b.accuracy - a.accuracy);
-  }, [filteredAttempts, questions]);
+  }, [filteredAttempts]);
 
   const difficultyPerformance = React.useMemo(() => {
     const dm = { Fácil: { correct: 0, total: 0 }, Médio: { correct: 0, total: 0 }, Difícil: { correct: 0, total: 0 } };
     filteredAttempts.forEach(a => {
-      const q = questions.find(q => q.id === a.question_id);
-      if (!q?.difficulty) return;
-      dm[q.difficulty].total++;
-      if (a.is_correct) dm[q.difficulty].correct++;
+      const difficulty = a.question?.difficulty;
+      if (!difficulty) return;
+      dm[difficulty].total++;
+      if (a.is_correct) dm[difficulty].correct++;
     });
     return Object.entries(dm).map(([d, v]) => ({ difficulty: d, accuracy: v.total > 0 ? safeNumber((v.correct / v.total * 100).toFixed(1)) : 0, correct: v.correct, total: v.total }));
-  }, [filteredAttempts, questions]);
+  }, [filteredAttempts]);
 
   const examBoardPerformance = React.useMemo(() => {
     const map = {};
     filteredAttempts.forEach(a => {
-      const q = questions.find(q => q.id === a.question_id);
-      if (!q?.exam_board) return;
-      if (!map[q.exam_board]) map[q.exam_board] = { board: q.exam_board, correct: 0, total: 0 };
-      map[q.exam_board].total++;
-      if (a.is_correct) map[q.exam_board].correct++;
+      const board = a.question?.exam_board;
+      if (!board) return;
+      if (!map[board]) map[board] = { board, correct: 0, total: 0 };
+      map[board].total++;
+      if (a.is_correct) map[board].correct++;
     });
     return Object.values(map).map(b => ({ ...b, accuracy: b.total > 0 ? safeNumber((b.correct / b.total * 100).toFixed(1)) : 0 })).sort((a, b) => b.accuracy - a.accuracy);
-  }, [filteredAttempts, questions]);
+  }, [filteredAttempts]);
 
   const totalAttempts = safeNumber(filteredAttempts.length);
   const correctAttempts = safeNumber(filteredAttempts.filter(a => a.is_correct).length);

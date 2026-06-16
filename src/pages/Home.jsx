@@ -26,7 +26,7 @@ export default function Home() {
 
   const { data: allAttempts = [], isLoading: attemptsLoading } = useQuery({
     queryKey: ['attempts'],
-    queryFn: () => base44.entities.Attempt.list('-created_date', 1000),
+    queryFn: () => base44.entities.Attempt.list('-created_date', 5000),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -34,12 +34,6 @@ export default function Home() {
     if (!user?.id) return [];
     return allAttempts.filter(a => a.user_id === user.id);
   }, [allAttempts, user?.id]);
-
-  const { data: allQuestions = [], isLoading: questionsLoading } = useQuery({
-    queryKey: ['questions'],
-    queryFn: () => base44.entities.Question.list(),
-    staleTime: 10 * 60 * 1000,
-  });
 
   useEffect(() => {
     const updateStreak = async () => {
@@ -66,11 +60,11 @@ export default function Home() {
 
     const byDiscipline = {};
     attempts.forEach(a => {
-      const q = allQuestions.find(q => q.id === a.question_id);
-      if (q?.discipline) {
-        if (!byDiscipline[q.discipline]) byDiscipline[q.discipline] = { correct: 0, total: 0 };
-        byDiscipline[q.discipline].total++;
-        if (a.is_correct) byDiscipline[q.discipline].correct++;
+      const discipline = a.question?.discipline;
+      if (discipline) {
+        if (!byDiscipline[discipline]) byDiscipline[discipline] = { correct: 0, total: 0 };
+        byDiscipline[discipline].total++;
+        if (a.is_correct) byDiscipline[discipline].correct++;
       }
     });
 
@@ -90,9 +84,9 @@ export default function Home() {
       .slice(0, 5);
 
     return { total, correct, accuracy, disciplines, pieData, best: disciplines[0], worst: disciplines[disciplines.length - 1], recentAttempts };
-  }, [attempts, allQuestions, user?.id]);
+  }, [attempts, allAttempts, user?.id]);
 
-  const isLoading = attemptsLoading || questionsLoading;
+  const isLoading = attemptsLoading;
 
   const quickActions = [
     { label: 'E-Questões', desc: 'Resolver questões', icon: BookOpen, page: 'Questions', color: 'bg-[#2f456d]' },
@@ -159,7 +153,7 @@ export default function Home() {
             {
               label: 'Questões Resolvidas',
               value: stats.total,
-              sub: `de ${allQuestions.length} disponíveis`,
+              sub: 'no período',
               icon: Target,
               accent: PRIMARY,
             },

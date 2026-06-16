@@ -2,6 +2,7 @@ import express from 'express';
 import {
   listQuestions,
   getQuestion,
+  getQuestionByCode,
   createQuestion,
   updateQuestion,
   deleteQuestion,
@@ -17,6 +18,7 @@ const router = express.Router();
 
 // Filtros disponíveis (disciplinas e assuntos do banco) — antes das rotas com :id
 router.get('/filters', authenticate, requireActiveSubscription, getFilters);
+router.get('/by-code/:code', authenticate, requireProfessor, getQuestionByCode);
 
 // Conteúdo protegido: requer autenticação + assinatura ativa
 router.get('/',    authenticate, requireActiveSubscription, listQuestions);

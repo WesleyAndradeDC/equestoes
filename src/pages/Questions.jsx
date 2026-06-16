@@ -39,29 +39,50 @@ export default function Questions() {
   // Check user subscription type
   const isRestrictedUser = false;
 
-  const { data: questions = [], isLoading: questionsLoading, error: questionsError } = useQuery({
-    queryKey: ['questions'],
-    queryFn: async () => {
-      console.log('🔍 Buscando questões...');
-      try {
-        const result = await base44.entities.Question.list();
-        console.log('✅ Questões recebidas:', result?.length);
-        console.log('📊 Primeira questão:', result?.[0]);
-        return result || [];
-      } catch (error) {
-        console.error('❌ Erro ao buscar questões:', error);
-        throw error;
-      }
-    },
-    retry: 1,
-    staleTime: 0,
-  });
-
   const { data: questionFilters = { disciplines: [], subjects: [], subjectsByDiscipline: {} } } = useQuery({
     queryKey: ['questionFilters'],
     queryFn: () => base44.entities.Question.getFilters(),
     staleTime: 5 * 60 * 1000,
   });
+
+  const { data: notebooks = [] } = useQuery({
+    queryKey: ['notebooks'],
+    queryFn: () => base44.entities.Notebook.filter({ created_by: user?.email }),
+    enabled: !!user,
+    initialData: [],
+  });
+
+  const currentNotebook = notebookId ? notebooks.find(n => n.id === notebookId) : null;
+  const notebookQuestionIds = currentNotebook?.question_ids?.join(',') ?? null;
+
+  const { data: questionsResponse, isLoading: questionsLoading, error: questionsError } = useQuery({
+    queryKey: ['questions', currentPage, filters, notebookQuestionIds],
+    queryFn: async () => {
+      const params = {
+        page: currentPage,
+        limit: questionsPerPage,
+        difficulty: filters.difficulty,
+        discipline: filters.discipline,
+        subject: filters.subject,
+        question_type: filters.question_type,
+        status: filters.status,
+      };
+
+      if (notebookQuestionIds) {
+        params.notebook_ids = notebookQuestionIds;
+      }
+
+      return base44.entities.Question.listPaginated(params);
+    },
+    enabled: !notebookId || !!currentNotebook,
+    retry: 1,
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
+  });
+
+  const questions = questionsResponse?.data ?? [];
+  const totalQuestions = questionsResponse?.total ?? 0;
+  const totalPages = questionsResponse?.totalPages ?? 1;
 
   const { data: allAttempts = [] } = useQuery({
     queryKey: ['attempts'],
@@ -76,16 +97,6 @@ export default function Questions() {
     console.log('🔒 Questions: Tentativas filtradas para o usuário:', filtered.length);
     return filtered;
   }, [allAttempts, user?.id]);
-
-  const { data: notebooks = [] } = useQuery({
-    queryKey: ['notebooks'],
-    queryFn: () => base44.entities.Notebook.filter({ created_by: user?.email }),
-    enabled: !!user,
-    initialData: [],
-  });
-
-  // Get the current notebook if filtering by notebook
-  const currentNotebook = notebookId ? notebooks.find(n => n.id === notebookId) : null;
 
   const createNotebookMutation = useMutation({
     mutationFn: (data) => base44.entities.Notebook.create(data),
@@ -110,81 +121,14 @@ export default function Questions() {
   const availableSubjects = questionFilters.subjects;
   const subjectsByDiscipline = questionFilters.subjectsByDiscipline;
 
-  // Get user's attempts for status filter
+  // Get user's attempts for status filter / card state
   const userAttempts = React.useMemo(() => {
     if (!user) return [];
     return attempts.filter(a => a.created_by === user.email);
   }, [attempts, user]);
 
-  // Filter questions
-  const filteredQuestions = questions.filter(question => {
-    // Notebook filter - if viewing a specific notebook, only show its questions
-    if (currentNotebook) {
-      if (!currentNotebook.question_ids?.includes(question.id)) {
-        return false;
-      }
-    }
-
-    // Restriction by subscription type
-    if (isRestrictedUser && question.discipline !== 'Português') {
-      return false;
-    }
-
-    // Difficulty filter
-    if (filters.difficulty && question.difficulty !== filters.difficulty) {
-      return false;
-    }
-
-    // Discipline filter
-    if (filters.discipline && question.discipline !== filters.discipline) {
-      return false;
-    }
-
-    // Subject filter
-    if (filters.subject) {
-      if (!question.subjects || !question.subjects.includes(filters.subject)) {
-        return false;
-      }
-    }
-
-    // Question type filter
-    if (filters.question_type && question.question_type !== filters.question_type) {
-      return false;
-    }
-
-    // Status filter - uses only current user's attempts
-    if (filters.status) {
-      const questionAttempts = userAttempts.filter(a => a.question_id === question.id);
-      
-      if (filters.status === 'not_answered') {
-        if (questionAttempts.length > 0) {
-          return false;
-        }
-      }
-      if (filters.status === 'correct') {
-        if (!questionAttempts.some(a => a.is_correct)) {
-          return false;
-        }
-      }
-      if (filters.status === 'incorrect') {
-        if (questionAttempts.length === 0) {
-          return false;
-        }
-        const hasCorrect = questionAttempts.some(a => a.is_correct);
-        if (hasCorrect) {
-          return false;
-        }
-      }
-    }
-
-    return true;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
   const startIndex = (currentPage - 1) * questionsPerPage;
-  const endIndex = startIndex + questionsPerPage;
-  const currentQuestions = filteredQuestions.slice(startIndex, endIndex);
+  const currentQuestions = questions;
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -243,22 +187,11 @@ export default function Questions() {
     return notebooks.some(n => n.question_ids?.includes(questionId));
   };
 
-  // Debug: mostrar erros no console
   React.useEffect(() => {
     if (questionsError) {
-      console.error('🔴 Erro nas questões:', questionsError);
       toast.error(`Erro ao carregar questões: ${questionsError.message}`);
     }
   }, [questionsError]);
-
-  React.useEffect(() => {
-    console.log('📊 Estado atual das questões:', {
-      total: questions?.length,
-      loading: questionsLoading,
-      hasError: !!questionsError,
-      firstQuestion: questions?.[0]?.id
-    });
-  }, [questions, questionsLoading, questionsError]);
 
   if (questionsLoading) {
     return (
@@ -300,7 +233,7 @@ export default function Questions() {
             {currentNotebook ? `Caderno: ${currentNotebook.name}` : 'Resolver Questões'}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            {filteredQuestions.length} questões disponíveis
+            {totalQuestions} questões disponíveis
           </p>
         </div>
       </div>
@@ -320,7 +253,7 @@ export default function Questions() {
 
       {/* Question Display — full width */}
       <div className="space-y-6">
-          {filteredQuestions.length === 0 ? (
+          {totalQuestions === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-4">
               <AlertCircle className="w-16 h-16 text-slate-300 dark:text-slate-600" />
               <div className="space-y-2">
@@ -340,7 +273,7 @@ export default function Questions() {
                 {currentQuestions.map((question, index) => (
                   <div key={question.id}>
                     <div className="mb-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                      Questão {startIndex + index + 1} de {filteredQuestions.length}
+                      Questão {startIndex + index + 1} de {totalQuestions}
                     </div>
                     <QuestionCard
                       question={question}
