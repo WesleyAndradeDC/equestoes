@@ -38,18 +38,12 @@ const isProduction = process.env.NODE_ENV === 'production';
 // pois recebe o header X-Forwarded-For sem que o Express esteja configurado para confiá-lo.
 app.set('trust proxy', 1);
 
-// ─── SEGURANÇA: Helmet ────────────────────────────────────────────────────────
-// Define cabeçalhos HTTP de segurança (XSS, Clickjacking, MIME sniffing, etc.)
-app.use(
-  helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-    contentSecurityPolicy: isProduction
-      ? undefined // Helmet padrão em produção
-      : false,    // Desabilitado em dev para facilitar debug
-  })
-);
+// ─── CORS (antes do Helmet — preflight OPTIONS precisa passar) ───────────────
+const extraOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((url) => url.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
 
-// ─── CORS ─────────────────────────────────────────────────────────────────────
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
@@ -61,19 +55,18 @@ const allowedOrigins = [
   'https://www.app.elevacursos.com.br',
   'https://elevacursos.com.br',
   'https://www.elevacursos.com.br',
-  process.env.FRONTEND_URL,
-].filter(Boolean);
+  ...extraOrigins,
+];
 
 const isAllowedOrigin = (origin) => {
   if (!origin) return true;
-  if (allowedOrigins.includes(origin)) return true;
-  // Aceita qualquer subdomínio de equestoes.com.br ou elevacursos.com.br
-  if (/^https?:\/\/([\w-]+\.)*equestoes\.com\.br$/.test(origin)) return true;
-  if (/^https?:\/\/([\w-]+\.)*elevacursos\.com\.br$/.test(origin)) return true;
-  // Aceita deploys do próprio projeto no Render
-  if (/^https:\/\/e-questoes[\w-]*\.onrender\.com$/.test(origin)) return true;
-  // Aceita URLs temporárias do Coolify (sslip.io)
-  if (/^https?:\/\/[\w-]+\.[\d.]+\.sslip\.io$/.test(origin)) return true;
+  const normalized = origin.replace(/\/+$/, '');
+  if (allowedOrigins.includes(normalized)) return true;
+  if (/^https?:\/\/([\w-]+\.)*equestoes\.com\.br$/.test(normalized)) return true;
+  if (/^https?:\/\/([\w-]+\.)*elevacursos\.com\.br$/.test(normalized)) return true;
+  if (/^https:\/\/e-questoes[\w-]*\.onrender\.com$/.test(normalized)) return true;
+  // Coolify / sslip.io — qualquer subdomínio temporário
+  if (/^https?:\/\/.+\.sslip\.io$/.test(normalized)) return true;
   return false;
 };
 
@@ -83,15 +76,22 @@ app.use(
       if (isAllowedOrigin(origin)) {
         callback(null, true);
       } else {
-        // Rejeitar com false (não com Error) para o Express ainda enviar
-        // os cabeçalhos CORS corretos na resposta de rejeição — evita que o
-        // browser mostre "Failed to fetch" ao invés de um erro CORS legível.
         callback(null, false);
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+// ─── SEGURANÇA: Helmet ────────────────────────────────────────────────────────
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: isProduction
+      ? undefined
+      : false,
   })
 );
 
