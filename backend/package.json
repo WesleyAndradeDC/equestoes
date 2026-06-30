@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "build": "npx prisma generate && npx prisma db push --accept-data-loss",
-    "postinstall": "node -e \"if(process.env.DATABASE_URL){require('child_process').execSync('npx prisma generate && npx prisma db push --accept-data-loss',{stdio:'inherit',shell:true})}\"",
+    "build": "npx prisma generate",
+    "postinstall": "node -e \"if(process.env.DATABASE_URL){require('child_process').execSync('npx prisma generate',{stdio:'inherit',shell:true})}\"",
+    "db:push": "npx prisma db push --accept-data-loss",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",

@@ -1,11 +1,8 @@
 // API Configuration — E-Questões
 const envURL = import.meta.env.VITE_API_BASE_URL;
 const defaultURL = 'http://localhost:5000/api';
-const productionURL = 'https://e-questoes-api.onrender.com/api';
 
-export const API_BASE_URL =
-  envURL ||
-  (window.location.hostname === 'localhost' ? defaultURL : productionURL);
+export const API_BASE_URL = envURL || defaultURL;
 
 export const API_ENDPOINTS = {
   // Auth
