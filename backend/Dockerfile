@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Prisma query engine needs OpenSSL (Alpine musl lacks libssl.so.1.1)
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && apt-get install -y --no-install-recommends openssl ca-certificates curl \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
