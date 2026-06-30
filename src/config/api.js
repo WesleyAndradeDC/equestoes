@@ -2,7 +2,13 @@
 const envURL = import.meta.env.VITE_API_BASE_URL;
 const defaultURL = 'http://localhost:5000/api';
 
-export const API_BASE_URL = envURL || defaultURL;
+function normalizeApiBaseUrl(url) {
+  if (!url) return defaultURL;
+  const trimmed = url.replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+}
+
+export const API_BASE_URL = normalizeApiBaseUrl(envURL);
 
 export const API_ENDPOINTS = {
   // Auth

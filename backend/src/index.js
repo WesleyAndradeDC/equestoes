@@ -72,6 +72,8 @@ const isAllowedOrigin = (origin) => {
   if (/^https?:\/\/([\w-]+\.)*elevacursos\.com\.br$/.test(origin)) return true;
   // Aceita deploys do próprio projeto no Render
   if (/^https:\/\/e-questoes[\w-]*\.onrender\.com$/.test(origin)) return true;
+  // Aceita URLs temporárias do Coolify (sslip.io)
+  if (/^https?:\/\/[\w-]+\.[\d.]+\.sslip\.io$/.test(origin)) return true;
   return false;
 };
 
