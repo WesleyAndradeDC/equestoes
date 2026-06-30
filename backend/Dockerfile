@@ -1,16 +1,18 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Install deps (prisma CLI is devDep — needed for generate)
+# Prisma query engine needs OpenSSL (Alpine musl lacks libssl.so.1.1)
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY package*.json ./
 COPY prisma ./prisma
 RUN npm ci
 
-# Generate Prisma client for current platform
 RUN npx prisma generate
 
-# Copy application source
 COPY src ./src
 
 ENV NODE_ENV=production
