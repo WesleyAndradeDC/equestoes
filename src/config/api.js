@@ -1,14 +1,28 @@
 // API Configuration — E-Questões
+// Produção: sempre /api (nginx proxy same-origin, zero CORS)
+// Dev: localhost:5000 ou VITE_API_BASE_URL explícito
 const envURL = import.meta.env.VITE_API_BASE_URL;
-const defaultURL = 'http://localhost:5000/api';
+const isDev = import.meta.env.DEV;
+const isLocalhost =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 function normalizeApiBaseUrl(url) {
-  if (!url) return defaultURL;
+  if (!url) return null;
   const trimmed = url.replace(/\/+$/, '');
+  if (trimmed.startsWith('/')) return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
   return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
 }
 
-export const API_BASE_URL = normalizeApiBaseUrl(envURL);
+function resolveApiBaseUrl() {
+  if (isDev && isLocalhost) {
+    return normalizeApiBaseUrl(envURL) || 'http://localhost:5000/api';
+  }
+  // Produção: path relativo → nginx repassa pro backend
+  return '/api';
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export const API_ENDPOINTS = {
   // Auth
