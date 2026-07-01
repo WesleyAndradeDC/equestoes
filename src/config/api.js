@@ -15,10 +15,14 @@ function normalizeApiBaseUrl(url) {
 }
 
 function resolveApiBaseUrl() {
+  // URL absoluta no build → browser chama backend direto (sem proxy nginx)
+  if (envURL && /^https?:\/\//.test(envURL)) {
+    return normalizeApiBaseUrl(envURL);
+  }
   if (isDev && isLocalhost) {
     return normalizeApiBaseUrl(envURL) || 'http://localhost:5000/api';
   }
-  // Produção: path relativo → nginx repassa pro backend
+  // Fallback: proxy same-origin via nginx (/api)
   return '/api';
 }
 
