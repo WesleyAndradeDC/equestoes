@@ -73,7 +73,9 @@ const isAllowedOrigin = (origin) => {
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (isAllowedOrigin(origin)) {
+      const allowed = isAllowedOrigin(origin);
+      console.log(`[CORS] origin="${origin ?? '(sem origin)'}" allowed=${allowed} FRONTEND_URL="${process.env.FRONTEND_URL ?? '(não definido)'}"`);
+      if (allowed) {
         callback(null, true);
       } else {
         callback(null, false);
