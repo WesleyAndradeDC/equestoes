@@ -3,7 +3,7 @@ import prisma from '../config/database.js';
 // Get distinct filter values (disciplines and subjects) from the database
 export const getFilters = async (req, res) => {
   try {
-    const [disciplineRows, subjectRows, pairRows] = await Promise.all([
+    const [disciplineRows, subjectRows, pairRows, examBoardRows, yearRows] = await Promise.all([
       prisma.$queryRaw`
         SELECT DISTINCT discipline
         FROM questions
@@ -23,10 +23,24 @@ export const getFilters = async (req, res) => {
           AND subjects IS NOT NULL AND array_length(subjects, 1) > 0
         ORDER BY discipline, subject
       `,
+      prisma.$queryRaw`
+        SELECT DISTINCT exam_board
+        FROM questions
+        WHERE exam_board IS NOT NULL AND exam_board <> ''
+        ORDER BY exam_board
+      `,
+      prisma.$queryRaw`
+        SELECT DISTINCT year
+        FROM questions
+        WHERE year IS NOT NULL
+        ORDER BY year DESC
+      `,
     ]);
 
     const disciplines = disciplineRows.map((r) => r.discipline);
     const subjects = subjectRows.map((r) => r.subject).filter(Boolean);
+    const exam_boards = examBoardRows.map((r) => r.exam_board).filter(Boolean);
+    const years = yearRows.map((r) => String(r.year));
 
     const subjectsByDiscipline = {};
     for (const row of pairRows) {
@@ -39,7 +53,7 @@ export const getFilters = async (req, res) => {
       }
     }
 
-    res.json({ disciplines, subjects, subjectsByDiscipline });
+    res.json({ disciplines, subjects, subjectsByDiscipline, exam_boards, years });
   } catch (error) {
     console.error('Get filters error:', error);
     res.status(500).json({ error: 'Erro ao buscar filtros' });
@@ -55,6 +69,8 @@ function buildQuestionWhere(req) {
     status,
     code,
     notebook_ids,
+    exam_board,
+    year,
   } = req.query;
 
   const where = {};
@@ -63,6 +79,11 @@ function buildQuestionWhere(req) {
   if (difficulty) where.difficulty = difficulty;
   if (question_type) where.question_type = question_type;
   if (subject) where.subjects = { has: subject };
+  if (exam_board) where.exam_board = exam_board;
+  if (year) {
+    const parsedYear = parseInt(year, 10);
+    if (!Number.isNaN(parsedYear)) where.year = parsedYear;
+  }
   if (code) where.code = { equals: code.trim(), mode: 'insensitive' };
 
   if (notebook_ids) {

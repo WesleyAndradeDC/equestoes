@@ -19,6 +19,8 @@ export default function Questions() {
     discipline: null,
     subject: null,
     question_type: null,
+    exam_board: null,
+    year: null,
   });
   const [user, setUser] = useState(null);
   const [newNotebookName, setNewNotebookName] = useState('');
@@ -39,7 +41,7 @@ export default function Questions() {
   // Check user subscription type
   const isRestrictedUser = false;
 
-  const { data: questionFilters = { disciplines: [], subjects: [], subjectsByDiscipline: {} } } = useQuery({
+  const { data: questionFilters = { disciplines: [], subjects: [], subjectsByDiscipline: {}, exam_boards: [], years: [] } } = useQuery({
     queryKey: ['questionFilters'],
     queryFn: () => base44.entities.Question.getFilters(),
     staleTime: 5 * 60 * 1000,
@@ -66,6 +68,8 @@ export default function Questions() {
         subject: filters.subject,
         question_type: filters.question_type,
         status: filters.status,
+        exam_board: filters.exam_board,
+        year: filters.year,
       };
 
       if (notebookQuestionIds) {
@@ -120,6 +124,8 @@ export default function Questions() {
   const availableDisciplines = questionFilters.disciplines;
   const availableSubjects = questionFilters.subjects;
   const subjectsByDiscipline = questionFilters.subjectsByDiscipline;
+  const availableExamBoards = questionFilters.exam_boards ?? [];
+  const availableYears = questionFilters.years ?? [];
 
   // Get user's attempts for status filter / card state
   const userAttempts = React.useMemo(() => {
@@ -151,6 +157,8 @@ export default function Questions() {
       discipline: null,
       subject: null,
       question_type: null,
+      exam_board: null,
+      year: null,
     });
     setCurrentPage(1);
   };
@@ -249,6 +257,8 @@ export default function Questions() {
         availableDisciplines={availableDisciplines}
         availableSubjects={availableSubjects}
         subjectsByDiscipline={subjectsByDiscipline}
+        availableExamBoards={availableExamBoards}
+        availableYears={availableYears}
       />
 
       {/* Question Display — full width */}

@@ -89,6 +89,8 @@ export default function FilterPanel({
   availableDisciplines = [],
   availableSubjects = [],
   subjectsByDiscipline = {},
+  availableExamBoards = [],
+  availableYears = [],
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -112,6 +114,8 @@ export default function FilterPanel({
     filters.discipline && { key: 'discipline', label: filters.discipline },
     filters.subject && { key: 'subject', label: filters.subject },
     filters.question_type && { key: 'question_type', label: filters.question_type },
+    filters.exam_board && { key: 'exam_board', label: filters.exam_board },
+    filters.year && { key: 'year', label: String(filters.year) },
   ].filter(Boolean);
 
   const hasActiveFilters = activeFilters.length > 0;
@@ -240,6 +244,28 @@ export default function FilterPanel({
                 options={['Múltipla Escolha', 'Certo ou Errado']}
                 placeholder="Todos os tipos"
                 label="tipo"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Banca</p>
+              <SearchableSelect
+                value={filters.exam_board}
+                onValueChange={(v) => onFilterChange({ ...filters, exam_board: v })}
+                options={availableExamBoards}
+                placeholder={availableExamBoards.length > 0 ? 'Todas as bancas' : 'Carregando…'}
+                label="banca"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Ano</p>
+              <SearchableSelect
+                value={filters.year ? String(filters.year) : null}
+                onValueChange={(v) => onFilterChange({ ...filters, year: v })}
+                options={availableYears}
+                placeholder={availableYears.length > 0 ? 'Todos os anos' : 'Carregando…'}
+                label="ano"
               />
             </div>
           </div>
