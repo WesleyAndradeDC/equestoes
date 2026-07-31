@@ -5,33 +5,37 @@ import {
   getDayTasks, updateTaskStatus, recalculate, updateSubjectProgress,
   getUserCronogramStats, getCalendar, getAvailableDisciplines,
 } from '../controllers/cronogramaController.js';
-import { authenticate, requireActiveSubscription } from '../middlewares/auth.js';
+import { authenticate, requireActiveSubscription, requireCronogramasBeta } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-// ── Pública (auth obrigatória) ─────────────────────────────────────────────────
-router.get('/official',          authenticate, requireActiveSubscription, listCronograms);
-router.get('/disciplines',       authenticate, requireActiveSubscription, getAvailableDisciplines);
+// Beta: só emails liberados em requireCronogramasBeta
+const guard = [authenticate, requireCronogramasBeta, requireActiveSubscription];
+const guardAuth = [authenticate, requireCronogramasBeta];
+
+// ── Oficial / disciplinas ──────────────────────────────────────────────────────
+router.get('/official',          ...guard, listCronograms);
+router.get('/disciplines',       ...guard, getAvailableDisciplines);
 
 // ── Cronogramas do usuário ─────────────────────────────────────────────────────
-router.get('/my',                   authenticate, requireActiveSubscription, listUserCronograms);
-router.post('/my',                  authenticate, requireActiveSubscription, createUserCronogram);
-router.get('/my/:id',               authenticate, requireActiveSubscription, getUserCronogram);
-router.get('/my/:id/tasks',         authenticate, requireActiveSubscription, getDayTasks);
-router.get('/my/:id/stats',         authenticate, requireActiveSubscription, getUserCronogramStats);
-router.get('/my/:id/calendar',      authenticate, requireActiveSubscription, getCalendar);
-router.post('/my/:id/recalculate',  authenticate, requireActiveSubscription, recalculate);
-router.patch('/my/tasks/:taskId',   authenticate, requireActiveSubscription, updateTaskStatus);
-router.patch('/my/:id/subjects/:subjectId/progress', authenticate, requireActiveSubscription, updateSubjectProgress);
+router.get('/my',                   ...guard, listUserCronograms);
+router.post('/my',                  ...guard, createUserCronogram);
+router.get('/my/:id',               ...guard, getUserCronogram);
+router.get('/my/:id/tasks',         ...guard, getDayTasks);
+router.get('/my/:id/stats',         ...guard, getUserCronogramStats);
+router.get('/my/:id/calendar',      ...guard, getCalendar);
+router.post('/my/:id/recalculate',  ...guard, recalculate);
+router.patch('/my/tasks/:taskId',   ...guard, updateTaskStatus);
+router.patch('/my/:id/subjects/:subjectId/progress', ...guard, updateSubjectProgress);
 
 // ── Adotar cronograma oficial ──────────────────────────────────────────────────
-router.post('/official/:cronogram_id/adopt', authenticate, requireActiveSubscription, adoptOfficialCronogram);
+router.post('/official/:cronogram_id/adopt', ...guard, adoptOfficialCronogram);
 
 // ── Admin: CRUD cronogramas oficiais ──────────────────────────────────────────
-router.get('/',        authenticate, listCronograms);
-router.get('/:id',     authenticate, getCronogram);
-router.post('/',       authenticate, createCronogram);
-router.put('/:id',     authenticate, updateCronogram);
-router.delete('/:id',  authenticate, deleteCronogram);
+router.get('/',        ...guardAuth, listCronograms);
+router.get('/:id',     ...guardAuth, getCronogram);
+router.post('/',       ...guardAuth, createCronogram);
+router.put('/:id',     ...guardAuth, updateCronogram);
+router.delete('/:id',  ...guardAuth, deleteCronogram);
 
 export default router;

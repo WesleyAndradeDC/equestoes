@@ -49,6 +49,7 @@ import { toast } from 'sonner';
 import userService from '@/services/userService';
 import reportService from '@/services/reportService';
 import cronogramaService from '@/services/cronogramaService';
+import { hasCronogramasAccess } from '@/config/cronogramasAccess';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const SUBSCRIPTION_OPTIONS = [
@@ -423,7 +424,7 @@ export default function Admin() {
     queryKey: ['admin-cronogramas'],
     queryFn: () => cronogramaService.adminList({ limit: 100 }),
     staleTime: 30_000,
-    enabled: isAdmin && activeTab === 'cronogramas',
+    enabled: isAdmin && hasCronogramasAccess(currentUser) && activeTab === 'cronogramas',
   });
 
   const createCronogramaMutation = useMutation({
@@ -620,7 +621,7 @@ export default function Admin() {
           )}
         </button>
 
-        {isAdmin && (
+        {isAdmin && hasCronogramasAccess(currentUser) && (
           <button
             onClick={() => setActiveTab('cronogramas')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${

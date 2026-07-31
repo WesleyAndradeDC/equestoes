@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import TutorChatPopup from '../components/tutor/TutorChatPopup';
 import { Button } from '@/components/ui/button';
+import { hasCronogramasAccess } from '@/config/cronogramasAccess';
 
 export default function Layout({ children, currentPageName }) {
   const { user, logout } = useAuth();
@@ -49,10 +50,13 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Início',        page: 'Home',         icon: Home },
     { name: 'E-Questões',   page: 'Questions',     icon: BookOpen },
     { name: 'Cadernos',     page: 'Notebooks',     icon: FolderOpen },
-    { name: 'Cronogramas',  page: 'Cronogramas',   icon: CalendarDays },
     { name: 'Estatísticas', page: 'Stats',         icon: BarChart3 },
     { name: 'Flashcards',   page: 'Flashcards',    icon: Layers },
   ];
+
+  if (hasCronogramasAccess(user)) {
+    navigation.splice(3, 0, { name: 'Cronogramas', page: 'Cronogramas', icon: CalendarDays });
+  }
 
   if (hasTutorAccess) {
     navigation.push({ name: 'E-Tutory', page: 'ETutory', icon: Brain });

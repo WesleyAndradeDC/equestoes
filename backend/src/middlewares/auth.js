@@ -64,6 +64,24 @@ export const authenticate = async (req, res, next) => {
 };
 
 // -----------------------------------------------------------------------------
+// requireCronogramasBeta
+// Módulo Cronogramas liberado só pra lista beta (temporário)
+// -----------------------------------------------------------------------------
+const CRONOGRAMAS_BETA_EMAILS = new Set([
+  'wesleyandrade.adm@gmail.com',
+]);
+
+export const requireCronogramasBeta = (req, res, next) => {
+  const email = (req.user?.email || '').toLowerCase();
+  if (!CRONOGRAMAS_BETA_EMAILS.has(email)) {
+    return res.status(403).json({
+      error: 'Módulo Cronogramas em acesso restrito (beta).',
+    });
+  }
+  next();
+};
+
+// -----------------------------------------------------------------------------
 // requireAdmin
 // Deve ser usado APOS authenticate
 // -----------------------------------------------------------------------------
