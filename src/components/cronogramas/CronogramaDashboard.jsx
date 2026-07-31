@@ -80,6 +80,7 @@ function TodayTasks({ ucId }) {
       qc.invalidateQueries({ queryKey: ['uc-tasks', ucId] });
       qc.invalidateQueries({ queryKey: ['uc-stats', ucId] });
       qc.invalidateQueries({ queryKey: ['uc', ucId] });
+      qc.invalidateQueries({ queryKey: ['uc-calendar', ucId] });
     },
     onError: (err) => toast.error(err?.message || 'Erro ao atualizar tarefa'),
   });
@@ -225,7 +226,9 @@ function EditalVerticalizado({ ucId, disciplines }) {
           ...s,
           discipline: d.name,
           discipline_color: d.color,
-          status: localStatus[s.id] || fromServer,
+          status: Object.prototype.hasOwnProperty.call(localStatus, s.id)
+            ? localStatus[s.id]
+            : fromServer,
         };
       })
     );
@@ -246,6 +249,7 @@ function EditalVerticalizado({ ucId, disciplines }) {
       qc.invalidateQueries({ queryKey: ['uc', ucId] });
       qc.invalidateQueries({ queryKey: ['uc-stats', ucId] });
       qc.invalidateQueries({ queryKey: ['uc-tasks', ucId] });
+      qc.invalidateQueries({ queryKey: ['uc-calendar', ucId] });
       qc.invalidateQueries({ queryKey: ['user-cronogramas'] });
     },
     onError: (err, vars) => {
@@ -261,8 +265,9 @@ function EditalVerticalizado({ ucId, disciplines }) {
   const completedCount = allSubjects.filter((s) => s.status === 'completed').length;
   const pct = allSubjects.length > 0 ? Math.round((completedCount / allSubjects.length) * 100) : 0;
 
-  const cycleStatus = (s) => {
-    const next = s.status === 'not_started' ? 'in_progress' : s.status === 'in_progress' ? 'completed' : 'not_started';
+  /** 1 clique: marca concluído; se já concluído, volta pra não iniciado */
+  const toggleComplete = (s) => {
+    const next = s.status === 'completed' ? 'not_started' : 'completed';
     setLocalStatus((prev) => ({ ...prev, [s.id]: next }));
     updateMutation.mutate({ subjectId: s.id, status: next });
   };
@@ -332,19 +337,33 @@ function EditalVerticalizado({ ucId, disciplines }) {
                 {disc.subjects.map((s) => (
                   <div key={s.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                     <button
-                      onClick={() => cycleStatus(s)}
+                      type="button"
+                      onClick={() => toggleComplete(s)}
+                      disabled={updateMutation.isPending}
                       className="shrink-0 hover:scale-110 transition-transform"
-                      title="Clique para alternar status"
+                      title={s.status === 'completed' ? 'Marcar como pendente' : 'Marcar como concluído'}
                     >
-                      {STATUS_ICON[s.status]}
+                      {STATUS_ICON[s.status] || STATUS_ICON.not_started}
                     </button>
                     <span className={`text-sm flex-1 ${s.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}>
                       {s.name}
                     </span>
-                    {s.status === 'in_progress' && (
-                      <Badge className="text-xs bg-amber-100 text-amber-700 border-0 dark:bg-amber-900/30 dark:text-amber-300">
-                        Em andamento
+                    {s.status === 'completed' ? (
+                      <Badge className="text-xs bg-emerald-100 text-emerald-700 border-0 dark:bg-emerald-900/30 dark:text-emerald-300">
+                        Concluído
                       </Badge>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={updateMutation.isPending}
+                        onClick={() => toggleComplete(s)}
+                        className="h-7 text-xs text-emerald-600 border-emerald-200 hover:bg-emerald-50 px-2"
+                      >
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Concluir
+                      </Button>
                     )}
                   </div>
                 ))}
