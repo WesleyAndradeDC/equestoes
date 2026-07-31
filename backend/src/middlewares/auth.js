@@ -69,6 +69,7 @@ export const authenticate = async (req, res, next) => {
 // -----------------------------------------------------------------------------
 const CRONOGRAMAS_BETA_EMAILS = new Set([
   'wesleyandrade.adm@gmail.com',
+  'luan@elevacursos.com.br',
 ]);
 
 export const requireCronogramasBeta = (req, res, next) => {
