@@ -435,7 +435,7 @@ export default function Admin() {
       setCronogramaForm({ title: '', contest: '', exam_board: '', position: '', description: '', thumbnail_url: '', category: '', is_official: true, is_public: true, status: 'active' });
       toast.success('Cronograma criado!');
     },
-    onError: () => toast.error('Erro ao criar cronograma'),
+    onError: (err) => toast.error(err?.message || 'Erro ao criar cronograma'),
   });
 
   const deleteCronogramaMutation = useMutation({
@@ -926,58 +926,77 @@ export default function Admin() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Novo Cronograma Oficial</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label>Título *</Label>
-                    <Input value={cronogramaForm.title} onChange={(e) => setCronogramaForm((f) => ({ ...f, title: e.target.value }))} placeholder="Ex: Cronograma PMSE 2025" />
+              <CardContent>
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!cronogramaForm.title?.trim() || createCronogramaMutation.isPending) return;
+                    createCronogramaMutation.mutate({
+                      ...cronogramaForm,
+                      title: cronogramaForm.title.trim(),
+                      status: cronogramaForm.status || 'active',
+                    });
+                  }}
+                >
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Título *</Label>
+                      <Input
+                        value={cronogramaForm.title}
+                        onChange={(e) => setCronogramaForm((f) => ({ ...f, title: e.target.value }))}
+                        placeholder="Ex: Cronograma PMSE 2025"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Concurso</Label>
+                      <Input value={cronogramaForm.contest} onChange={(e) => setCronogramaForm((f) => ({ ...f, contest: e.target.value }))} placeholder="Ex: PMSE" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Banca</Label>
+                      <Input value={cronogramaForm.exam_board} onChange={(e) => setCronogramaForm((f) => ({ ...f, exam_board: e.target.value }))} placeholder="Ex: CESPE" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Cargo</Label>
+                      <Input value={cronogramaForm.position} onChange={(e) => setCronogramaForm((f) => ({ ...f, position: e.target.value }))} placeholder="Ex: Soldado PM" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Categoria</Label>
+                      <Input value={cronogramaForm.category} onChange={(e) => setCronogramaForm((f) => ({ ...f, category: e.target.value }))} placeholder="Ex: Policia, Fiscal..." />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Thumbnail (URL)</Label>
+                      <Input value={cronogramaForm.thumbnail_url} onChange={(e) => setCronogramaForm((f) => ({ ...f, thumbnail_url: e.target.value }))} placeholder="https://..." />
+                    </div>
                   </div>
                   <div className="space-y-1">
-                    <Label>Concurso</Label>
-                    <Input value={cronogramaForm.contest} onChange={(e) => setCronogramaForm((f) => ({ ...f, contest: e.target.value }))} placeholder="Ex: PMSE" />
+                    <Label>Descrição</Label>
+                    <Textarea value={cronogramaForm.description} onChange={(e) => setCronogramaForm((f) => ({ ...f, description: e.target.value }))} placeholder="Descrição do cronograma..." rows={2} />
                   </div>
-                  <div className="space-y-1">
-                    <Label>Banca</Label>
-                    <Input value={cronogramaForm.exam_board} onChange={(e) => setCronogramaForm((f) => ({ ...f, exam_board: e.target.value }))} placeholder="Ex: CESPE" />
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="checkbox" checked={cronogramaForm.is_official} onChange={(e) => setCronogramaForm((f) => ({ ...f, is_official: e.target.checked }))} className="rounded" />
+                      Cronograma Oficial
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="checkbox" checked={cronogramaForm.is_public} onChange={(e) => setCronogramaForm((f) => ({ ...f, is_public: e.target.checked }))} className="rounded" />
+                      Público
+                    </label>
                   </div>
-                  <div className="space-y-1">
-                    <Label>Cargo</Label>
-                    <Input value={cronogramaForm.position} onChange={(e) => setCronogramaForm((f) => ({ ...f, position: e.target.value }))} placeholder="Ex: Soldado PM" />
+                  <div className="flex gap-2">
+                    <Button
+                      type="submit"
+                      disabled={!cronogramaForm.title?.trim() || createCronogramaMutation.isPending}
+                      className="bg-[#2f456d] hover:bg-[#1a2d4a] text-white"
+                      size="sm"
+                    >
+                      {createCronogramaMutation.isPending ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Salvando...</> : 'Salvar'}
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setShowCronogramaForm(false)}>Cancelar</Button>
                   </div>
-                  <div className="space-y-1">
-                    <Label>Categoria</Label>
-                    <Input value={cronogramaForm.category} onChange={(e) => setCronogramaForm((f) => ({ ...f, category: e.target.value }))} placeholder="Ex: Policia, Fiscal..." />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Thumbnail (URL)</Label>
-                    <Input value={cronogramaForm.thumbnail_url} onChange={(e) => setCronogramaForm((f) => ({ ...f, thumbnail_url: e.target.value }))} placeholder="https://..." />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label>Descrição</Label>
-                  <Textarea value={cronogramaForm.description} onChange={(e) => setCronogramaForm((f) => ({ ...f, description: e.target.value }))} placeholder="Descrição do cronograma..." rows={2} />
-                </div>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" checked={cronogramaForm.is_official} onChange={(e) => setCronogramaForm((f) => ({ ...f, is_official: e.target.checked }))} className="rounded" />
-                    Cronograma Oficial
-                  </label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" checked={cronogramaForm.is_public} onChange={(e) => setCronogramaForm((f) => ({ ...f, is_public: e.target.checked }))} className="rounded" />
-                    Público
-                  </label>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => createCronogramaMutation.mutate(cronogramaForm)}
-                    disabled={!cronogramaForm.title || createCronogramaMutation.isPending}
-                    className="bg-[#2f456d] hover:bg-[#1a2d4a] text-white"
-                    size="sm"
-                  >
-                    {createCronogramaMutation.isPending ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Salvando...</> : 'Salvar'}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setShowCronogramaForm(false)}>Cancelar</Button>
-                </div>
+                </form>
               </CardContent>
             </Card>
           )}

@@ -158,8 +158,10 @@ async function generateDailyTasks(userCronogramId) {
 
 export const listCronograms = async (req, res) => {
   try {
-    const { official, status = 'active', page = 1, limit = 20 } = req.query;
-    const where = { status };
+    const { official, status, page = 1, limit = 20 } = req.query;
+    const where = {};
+    // status omitido ou "all" → lista todos (admin); senão filtra
+    if (status && status !== 'all') where.status = status;
     if (official === 'true') where.is_official = true;
     if (official === 'false') where.is_official = false;
 
@@ -223,36 +225,58 @@ export const createCronogram = async (req, res) => {
   try {
     const {
       title, slug, description, thumbnail_url, contest, exam_board, position,
-      category, is_official, is_public, total_days, tags, display_order,
+      category, is_official, is_public, total_days, tags, display_order, status,
       disciplines = [],
     } = req.body;
-    if (!title) return res.status(400).json({ error: 'Título obrigatório' });
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ error: 'Título obrigatório' });
+    }
+
+    const cleanTitle = String(title).trim();
+    const autoSlug = (slug && String(slug).trim())
+      || cleanTitle
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 80);
 
     const cronogram = await prisma.cronogram.create({
       data: {
-        title, slug, description, thumbnail_url, contest, exam_board, position,
-        category, is_official: !!is_official, is_public: is_public !== false,
-        total_days, tags: tags || [], display_order: display_order || 0,
-        status: 'draft',
+        title: cleanTitle,
+        slug: autoSlug || null,
+        description: description || null,
+        thumbnail_url: thumbnail_url || null,
+        contest: contest || null,
+        exam_board: exam_board || null,
+        position: position || null,
+        category: category || null,
+        is_official: !!is_official,
+        is_public: is_public !== false,
+        total_days: total_days ?? null,
+        tags: tags || [],
+        display_order: display_order || 0,
+        status: status || 'active',
         created_by: req.user.id,
         disciplines: {
-          create: disciplines.map((d, i) => ({
+          create: (disciplines || []).map((d, i) => ({
             name: d.name,
             display_order: d.display_order ?? i,
             color: d.color || 'blue',
-            icon: d.icon,
+            icon: d.icon || null,
             weight: d.weight ?? 1,
             difficulty: d.difficulty ?? 3,
             required: d.required !== false,
-            suggested_hours: d.suggested_hours,
+            suggested_hours: d.suggested_hours ?? null,
             subjects: {
               create: (d.subjects || []).map((s, j) => ({
-                name: s.name,
-                description: s.description,
-                display_order: s.display_order ?? j,
-                weight: s.weight ?? 1,
-                suggested_minutes: s.suggested_minutes ?? 60,
-                required: s.required !== false,
+                name: typeof s === 'string' ? s : s.name,
+                description: typeof s === 'string' ? null : (s.description || null),
+                display_order: typeof s === 'string' ? j : (s.display_order ?? j),
+                weight: typeof s === 'string' ? 1 : (s.weight ?? 1),
+                suggested_minutes: typeof s === 'string' ? 60 : (s.suggested_minutes ?? 60),
+                required: typeof s === 'string' ? true : (s.required !== false),
               })),
             },
           })),
@@ -263,7 +287,10 @@ export const createCronogram = async (req, res) => {
     res.status(201).json(cronogram);
   } catch (err) {
     console.error('createCronogram error:', err);
-    res.status(500).json({ error: 'Erro ao criar cronograma' });
+    if (err.code === 'P2002') {
+      return res.status(409).json({ error: 'Já existe um cronograma com esse slug' });
+    }
+    res.status(500).json({ error: 'Erro ao criar cronograma', detail: err.message });
   }
 };
 
