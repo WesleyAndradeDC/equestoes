@@ -82,4 +82,19 @@ export const API_ENDPOINTS = {
 
   // Webhook
   WEBHOOK_WOOCOMMERCE: '/webhook/woocommerce',
+
+  // Cronogramas
+  CRONOGRAMAS: '/cronogramas',
+  CRONOGRAMAS_OFFICIAL: '/cronogramas/official',
+  CRONOGRAMAS_DISCIPLINES: '/cronogramas/disciplines',
+  CRONOGRAMAS_MY: '/cronogramas/my',
+  CRONOGRAMAS_MY_BY_ID: (id) => `/cronogramas/my/${id}`,
+  CRONOGRAMAS_MY_TASKS: (id) => `/cronogramas/my/${id}/tasks`,
+  CRONOGRAMAS_MY_STATS: (id) => `/cronogramas/my/${id}/stats`,
+  CRONOGRAMAS_MY_CALENDAR: (id) => `/cronogramas/my/${id}/calendar`,
+  CRONOGRAMAS_MY_RECALCULATE: (id) => `/cronogramas/my/${id}/recalculate`,
+  CRONOGRAMAS_TASK_STATUS: (taskId) => `/cronogramas/my/tasks/${taskId}`,
+  CRONOGRAMAS_SUBJECT_PROGRESS: (id, subjectId) => `/cronogramas/my/${id}/subjects/${subjectId}/progress`,
+  CRONOGRAMAS_ADOPT: (cronogramId) => `/cronogramas/official/${cronogramId}/adopt`,
+  CRONOGRAMA_BY_ID: (id) => `/cronogramas/${id}`,
 };

@@ -26,7 +26,8 @@ import tutorRoutes     from './routes/tutor.js';
 import webhookRoutes   from './routes/webhook.js';
 import rankingRoutes   from './routes/ranking.js';
 import reportRoutes    from './routes/reports.js';
-import flashcardRoutes from './routes/flashcards.js';
+import flashcardRoutes   from './routes/flashcards.js';
+import cronogramaRoutes  from './routes/cronogramas.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -185,7 +186,8 @@ app.use('/api/tutor', tutorRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/webhook', webhookRoutes);
-app.use('/api/flashcards', flashcardRoutes);
+app.use('/api/flashcards',  flashcardRoutes);
+app.use('/api/cronogramas', cronogramaRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────────────────────────
 app.use((req, res) => {

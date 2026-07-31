@@ -5,7 +5,7 @@ import { createPageUrl } from './utils';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Home, BookOpen, FolderOpen, BarChart3,
-  LogOut, Menu, X, Moon, Sun, Brain, Layers, Shield,
+  LogOut, Menu, X, Moon, Sun, Brain, Layers, Shield, CalendarDays,
 } from 'lucide-react';
 import TutorChatPopup from '../components/tutor/TutorChatPopup';
 import { Button } from '@/components/ui/button';
@@ -46,11 +46,12 @@ export default function Layout({ children, currentPageName }) {
   const hasTutorAccess = user?.role === 'admin' || allowedTutorProfiles.includes(user?.subscription_type);
 
   const navigation = [
-    { name: 'Início',       page: 'Home',       icon: Home },
-    { name: 'E-Questões',  page: 'Questions',   icon: BookOpen },
-    { name: 'Cadernos',    page: 'Notebooks',   icon: FolderOpen },
-    { name: 'Estatísticas',page: 'Stats',       icon: BarChart3 },
-    { name: 'Flashcards',  page: 'Flashcards',  icon: Layers },
+    { name: 'Início',        page: 'Home',         icon: Home },
+    { name: 'E-Questões',   page: 'Questions',     icon: BookOpen },
+    { name: 'Cadernos',     page: 'Notebooks',     icon: FolderOpen },
+    { name: 'Cronogramas',  page: 'Cronogramas',   icon: CalendarDays },
+    { name: 'Estatísticas', page: 'Stats',         icon: BarChart3 },
+    { name: 'Flashcards',   page: 'Flashcards',    icon: Layers },
   ];
 
   if (hasTutorAccess) {

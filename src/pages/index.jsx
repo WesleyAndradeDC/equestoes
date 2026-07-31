@@ -15,6 +15,7 @@ import Stats from "./Stats";
 import ReviewQuestion from "./ReviewQuestion";
 import ETutory from "./ETutory";
 import Flashcards from "./Flashcards";
+import Cronogramas from "./Cronogramas";
 
 const PAGES = {
     Home,
@@ -27,6 +28,7 @@ const PAGES = {
     ReviewQuestion,
     ETutory,
     Flashcards,
+    Cronogramas,
 };
 
 function _getCurrentPage(pathname) {
@@ -101,6 +103,9 @@ function PagesContent() {
             <Route path="/flashcards" element={
                 <ProtectedPageRoute pageName="Flashcards"><Flashcards /></ProtectedPageRoute>
             } />
+            <Route path="/cronogramas" element={
+                <ProtectedPageRoute pageName="Cronogramas"><Cronogramas /></ProtectedPageRoute>
+            } />
 
             {/* Legacy redirects */}
             <Route path="/Home" element={<Navigate to="/home" replace />} />
@@ -115,6 +120,7 @@ function PagesContent() {
             <Route path="/tutorgramatique" element={<Navigate to="/etutory" replace />} />
             <Route path="/ETutory" element={<Navigate to="/etutory" replace />} />
             <Route path="/Flashcards" element={<Navigate to="/flashcards" replace />} />
+            <Route path="/Cronogramas" element={<Navigate to="/cronogramas" replace />} />
 
             {/* 404 */}
             <Route path="*" element={<NotFound />} />

@@ -53,6 +53,8 @@ model User {
   reports_resolved   QuestionReport[] @relation("ResolvedBy")
   flashcards_created Flashcard[]
   flashcard_reviews  FlashcardReview[]
+  cronograms_created Cronogram[]
+  user_cronograms    UserCronogram[]
 
   @@map("users")
 }
@@ -263,6 +265,236 @@ model Flashcard {
   @@index([discipline])
   @@index([is_global])
   @@map("flashcards")
+}
+
+// ─────────────────────────────────────────────────────────────
+// CRONOGRAMS  ←  Templates oficiais / base
+// ─────────────────────────────────────────────────────────────
+model Cronogram {
+  id             String   @id @default(uuid())
+  title          String
+  slug           String?  @unique
+  description    String?
+  thumbnail_url  String?
+  contest        String?
+  exam_board     String?
+  position       String?
+  category       String?
+  status         String   @default("draft")    // draft | active | archived
+  is_official    Boolean  @default(false)
+  is_public      Boolean  @default(true)
+  total_days     Int?
+  tags           String[] @default([])
+  display_order  Int      @default(0)
+  students_count Int      @default(0)
+  created_by     String?
+
+  creator     User?                  @relation(fields: [created_by], references: [id], onDelete: SetNull)
+  disciplines CronogramDiscipline[]
+  days        CronogramDay[]
+  user_copies UserCronogram[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("cronograms")
+}
+
+model CronogramDiscipline {
+  id              String  @id @default(uuid())
+  cronogram_id    String
+  name            String
+  display_order   Int     @default(0)
+  color           String  @default("blue")
+  icon            String?
+  weight          Float   @default(1.0)
+  difficulty      Int     @default(3)
+  required        Boolean @default(true)
+  suggested_hours Float?
+
+  cronogram Cronogram @relation(fields: [cronogram_id], references: [id], onDelete: Cascade)
+  subjects  CronogramSubject[]
+  day_tasks CronogramDayTask[]
+  user_disciplines UserCronogramDiscipline[]
+
+  created_at DateTime @default(now())
+
+  @@map("cronogram_disciplines")
+}
+
+model CronogramSubject {
+  id                String  @id @default(uuid())
+  discipline_id     String
+  name              String
+  description       String?
+  display_order     Int     @default(0)
+  weight            Float   @default(1.0)
+  suggested_minutes Int     @default(60)
+  review_count      Int     @default(1)
+  required          Boolean @default(true)
+  status            String  @default("active")
+
+  discipline CronogramDiscipline @relation(fields: [discipline_id], references: [id], onDelete: Cascade)
+  day_tasks  CronogramDayTask[]
+  user_subjects UserCronogramSubject[]
+
+  created_at DateTime @default(now())
+
+  @@map("cronogram_subjects")
+}
+
+model CronogramDay {
+  id           String  @id @default(uuid())
+  cronogram_id String
+  day_number   Int
+  title        String?
+  description  String?
+
+  cronogram Cronogram          @relation(fields: [cronogram_id], references: [id], onDelete: Cascade)
+  tasks     CronogramDayTask[]
+
+  created_at DateTime @default(now())
+
+  @@unique([cronogram_id, day_number])
+  @@map("cronogram_days")
+}
+
+model CronogramDayTask {
+  id               String  @id @default(uuid())
+  day_id           String
+  subject_id       String?
+  discipline_id    String?
+  display_order    Int     @default(0)
+  duration_minutes Int     @default(60)
+  notes            String?
+
+  day        CronogramDay         @relation(fields: [day_id], references: [id], onDelete: Cascade)
+  subject    CronogramSubject?    @relation(fields: [subject_id], references: [id], onDelete: SetNull)
+  discipline CronogramDiscipline? @relation(fields: [discipline_id], references: [id], onDelete: SetNull)
+
+  created_at DateTime @default(now())
+
+  @@map("cronogram_day_tasks")
+}
+
+// ─────────────────────────────────────────────────────────────
+// USER CRONOGRAM  ←  Instância por usuário
+// ─────────────────────────────────────────────────────────────
+model UserCronogram {
+  id                  String   @id @default(uuid())
+  user_id             String
+  cronogram_id        String?
+  title               String
+  contest             String?
+  status              String   @default("active")  // active | paused | completed | archived
+  type                String   @default("custom")  // custom | official
+  disciplines_per_day Int      @default(2)
+  study_days          String[] @default(["Mon","Tue","Wed","Thu","Fri"])
+  daily_minutes       Int      @default(120)
+  current_day         Int      @default(1)
+  total_days          Int?
+  days_studied        Int      @default(0)
+  streak              Int      @default(0)
+  last_study_date     String?
+  target_date         String?
+  completed_at        DateTime?
+
+  user        User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cronogram   Cronogram?         @relation(fields: [cronogram_id], references: [id], onDelete: SetNull)
+  disciplines UserCronogramDiscipline[]
+  daily_tasks UserDailyTask[]
+  subject_progress UserSubjectProgress[]
+
+  started_at  DateTime @default(now())
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("user_cronograms")
+}
+
+model UserCronogramDiscipline {
+  id                   String  @id @default(uuid())
+  user_cronogram_id    String
+  source_discipline_id String?
+  name                 String
+  display_order        Int     @default(0)
+  color                String  @default("blue")
+  icon                 String?
+  weight               Float   @default(1.0)
+  difficulty           Int     @default(3)
+  required             Boolean @default(true)
+  suggested_hours      Float?
+
+  user_cronogram    UserCronogram        @relation(fields: [user_cronogram_id], references: [id], onDelete: Cascade)
+  source_discipline CronogramDiscipline? @relation(fields: [source_discipline_id], references: [id], onDelete: SetNull)
+  subjects          UserCronogramSubject[]
+  daily_tasks       UserDailyTask[]
+
+  created_at DateTime @default(now())
+
+  @@map("user_cronogram_disciplines")
+}
+
+model UserCronogramSubject {
+  id                String  @id @default(uuid())
+  discipline_id     String
+  source_subject_id String?
+  name              String
+  description       String?
+  display_order     Int     @default(0)
+  weight            Float   @default(1.0)
+  suggested_minutes Int     @default(60)
+  required          Boolean @default(true)
+
+  discipline      UserCronogramDiscipline @relation(fields: [discipline_id], references: [id], onDelete: Cascade)
+  source_subject  CronogramSubject?        @relation(fields: [source_subject_id], references: [id], onDelete: SetNull)
+  daily_tasks     UserDailyTask[]
+  progress        UserSubjectProgress[]
+
+  created_at DateTime @default(now())
+
+  @@map("user_cronogram_subjects")
+}
+
+model UserSubjectProgress {
+  id                String    @id @default(uuid())
+  user_cronogram_id String
+  subject_id        String
+  status            String    @default("not_started")  // not_started | in_progress | completed
+  completed_at      DateTime?
+  notes             String?
+
+  user_cronogram UserCronogram        @relation(fields: [user_cronogram_id], references: [id], onDelete: Cascade)
+  subject        UserCronogramSubject @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([user_cronogram_id, subject_id])
+  @@map("user_subject_progress")
+}
+
+model UserDailyTask {
+  id                String    @id @default(uuid())
+  user_cronogram_id String
+  subject_id        String?
+  discipline_id     String?
+  scheduled_date    String    // ISO date YYYY-MM-DD
+  day_number        Int
+  display_order     Int       @default(0)
+  status            String    @default("pending")  // pending | completed | skipped | rescheduled
+  completed_at      DateTime?
+  rescheduled_to    String?
+  notes             String?
+
+  user_cronogram UserCronogram            @relation(fields: [user_cronogram_id], references: [id], onDelete: Cascade)
+  subject        UserCronogramSubject?    @relation(fields: [subject_id], references: [id], onDelete: SetNull)
+  discipline     UserCronogramDiscipline? @relation(fields: [discipline_id], references: [id], onDelete: SetNull)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("user_daily_tasks")
 }
 
 // ─────────────────────────────────────────────────────────────

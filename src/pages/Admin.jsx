@@ -41,10 +41,14 @@ import {
   ChevronDown,
   ChevronUp,
   KeyRound,
+  CalendarDays,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import userService from '@/services/userService';
 import reportService from '@/services/reportService';
+import cronogramaService from '@/services/cronogramaService';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const SUBSCRIPTION_OPTIONS = [
@@ -371,6 +375,8 @@ export default function Admin() {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState('users');
+  const [cronogramaForm, setCronogramaForm] = useState({ title: '', contest: '', exam_board: '', position: '', description: '', thumbnail_url: '', category: '', is_official: true, is_public: true, status: 'active' });
+  const [showCronogramaForm, setShowCronogramaForm] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -411,6 +417,33 @@ export default function Admin() {
     queryFn: () => reportService.counts(),
     staleTime: 30_000,
     retry: 1,
+  });
+
+  const { data: cronogramasData = { data: [] }, isLoading: cronogramasLoading } = useQuery({
+    queryKey: ['admin-cronogramas'],
+    queryFn: () => cronogramaService.adminList({ limit: 100 }),
+    staleTime: 30_000,
+    enabled: isAdmin && activeTab === 'cronogramas',
+  });
+
+  const createCronogramaMutation = useMutation({
+    mutationFn: (data) => cronogramaService.adminCreate(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-cronogramas'] });
+      setShowCronogramaForm(false);
+      setCronogramaForm({ title: '', contest: '', exam_board: '', position: '', description: '', thumbnail_url: '', category: '', is_official: true, is_public: true, status: 'active' });
+      toast.success('Cronograma criado!');
+    },
+    onError: () => toast.error('Erro ao criar cronograma'),
+  });
+
+  const deleteCronogramaMutation = useMutation({
+    mutationFn: (id) => cronogramaService.adminDelete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-cronogramas'] });
+      toast.success('Cronograma excluído');
+    },
+    onError: () => toast.error('Erro ao excluir'),
   });
 
   // ── Mutations: Usuários ────────────────────────────────────────────────────
@@ -586,6 +619,20 @@ export default function Admin() {
             </Badge>
           )}
         </button>
+
+        {isAdmin && (
+          <button
+            onClick={() => setActiveTab('cronogramas')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'cronogramas'
+                ? 'bg-white dark:bg-slate-700 text-[#2f456d] dark:text-blue-300 shadow'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+          >
+            <CalendarDays className="w-4 h-4" />
+            Cronogramas
+          </button>
+        )}
       </div>
 
       {/* ══════════════════════ TAB: USUÁRIOS ══════════════════════ */}
@@ -854,6 +901,124 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ══════════════════════ TAB: CRONOGRAMAS ══════════════════════ */}
+      {activeTab === 'cronogramas' && isAdmin && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-[#2f456d]" />
+              Cronogramas Oficiais
+            </h2>
+            <Button
+              onClick={() => setShowCronogramaForm(true)}
+              className="bg-[#2f456d] hover:bg-[#1a2d4a] text-white gap-1.5"
+              size="sm"
+            >
+              <Plus className="w-4 h-4" />
+              Novo Cronograma
+            </Button>
+          </div>
+
+          {showCronogramaForm && (
+            <Card className="border-[#2f456d]/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Novo Cronograma Oficial</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Título *</Label>
+                    <Input value={cronogramaForm.title} onChange={(e) => setCronogramaForm((f) => ({ ...f, title: e.target.value }))} placeholder="Ex: Cronograma PMSE 2025" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Concurso</Label>
+                    <Input value={cronogramaForm.contest} onChange={(e) => setCronogramaForm((f) => ({ ...f, contest: e.target.value }))} placeholder="Ex: PMSE" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Banca</Label>
+                    <Input value={cronogramaForm.exam_board} onChange={(e) => setCronogramaForm((f) => ({ ...f, exam_board: e.target.value }))} placeholder="Ex: CESPE" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Cargo</Label>
+                    <Input value={cronogramaForm.position} onChange={(e) => setCronogramaForm((f) => ({ ...f, position: e.target.value }))} placeholder="Ex: Soldado PM" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Categoria</Label>
+                    <Input value={cronogramaForm.category} onChange={(e) => setCronogramaForm((f) => ({ ...f, category: e.target.value }))} placeholder="Ex: Policia, Fiscal..." />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Thumbnail (URL)</Label>
+                    <Input value={cronogramaForm.thumbnail_url} onChange={(e) => setCronogramaForm((f) => ({ ...f, thumbnail_url: e.target.value }))} placeholder="https://..." />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label>Descrição</Label>
+                  <Textarea value={cronogramaForm.description} onChange={(e) => setCronogramaForm((f) => ({ ...f, description: e.target.value }))} placeholder="Descrição do cronograma..." rows={2} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={cronogramaForm.is_official} onChange={(e) => setCronogramaForm((f) => ({ ...f, is_official: e.target.checked }))} className="rounded" />
+                    Cronograma Oficial
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={cronogramaForm.is_public} onChange={(e) => setCronogramaForm((f) => ({ ...f, is_public: e.target.checked }))} className="rounded" />
+                    Público
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => createCronogramaMutation.mutate(cronogramaForm)}
+                    disabled={!cronogramaForm.title || createCronogramaMutation.isPending}
+                    className="bg-[#2f456d] hover:bg-[#1a2d4a] text-white"
+                    size="sm"
+                  >
+                    {createCronogramaMutation.isPending ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Salvando...</> : 'Salvar'}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowCronogramaForm(false)}>Cancelar</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {cronogramasLoading ? (
+            <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-[#2f456d]" /></div>
+          ) : cronogramasData.data?.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">
+              <CalendarDays className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p>Nenhum cronograma criado ainda</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {cronogramasData.data?.map((c) => (
+                <div key={c.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-slate-800 dark:text-white">{c.title}</p>
+                      {c.is_official && <Badge className="text-xs bg-[#f26836]/10 text-[#f26836] border-[#f26836]/20">Oficial</Badge>}
+                      <Badge variant="outline" className="text-xs">{c.status}</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap">
+                      {c.contest && <span>{c.contest}</span>}
+                      {c.exam_board && <span>{c.exam_board}</span>}
+                      <span>{c.disciplines_count || 0} disciplinas</span>
+                      <span>{c.students_count || 0} alunos</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { if (window.confirm('Excluir cronograma?')) deleteCronogramaMutation.mutate(c.id); }}
+                    className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Dialog: Confirmar reset de senha */}
       <Dialog open={!!confirmResetUser} onOpenChange={(open) => !open && setConfirmResetUser(null)}>
