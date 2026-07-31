@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,13 +11,9 @@ const COLOR_LABELS = {
   rose: 'Rosa', cyan: 'Ciano', amber: 'Âmbar', teal: 'Verde-água',
 };
 
-function emptyDiscipline() {
-  return { name: '', color: 'blue', difficulty: 3, subjects: [], _subjectInput: '' };
-}
-
 /**
  * Editor de disciplinas + assuntos para cronograma oficial (admin).
- * Usado no create e no edit.
+ * Enter no nome da disciplina → cria e foca input de assuntos na hora.
  */
 export default function AdminCronogramaEditor({
   disciplines: initial = [],
@@ -35,6 +31,10 @@ export default function AdminCronogramaEditor({
       _open: true,
     }))
   );
+  const [newDiscName, setNewDiscName] = useState('');
+  const [focusSubjectIdx, setFocusSubjectIdx] = useState(null);
+  const subjectInputRefs = useRef({});
+  const newDiscInputRef = useRef(null);
 
   useEffect(() => {
     onChange?.(
@@ -52,19 +52,52 @@ export default function AdminCronogramaEditor({
     );
   }, [disciplines]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (focusSubjectIdx == null) return;
+    const el = subjectInputRefs.current[focusSubjectIdx];
+    if (el) {
+      el.focus();
+      setFocusSubjectIdx(null);
+    }
+  }, [focusSubjectIdx, disciplines.length]);
+
   const update = (idx, patch) => {
     setDisciplines((prev) => prev.map((d, i) => (i === idx ? { ...d, ...patch } : d)));
   };
 
   const remove = (idx) => setDisciplines((prev) => prev.filter((_, i) => i !== idx));
 
+  const addDiscipline = () => {
+    const name = newDiscName.trim();
+    if (!name) return;
+    const nextIdx = disciplines.length;
+    setDisciplines((prev) => [
+      ...prev,
+      {
+        name,
+        color: COLORS[nextIdx % COLORS.length],
+        difficulty: 3,
+        subjects: [],
+        _subjectInput: '',
+        _open: true,
+      },
+    ]);
+    setNewDiscName('');
+    setFocusSubjectIdx(nextIdx);
+  };
+
   const addSubject = (idx) => {
-    const text = (disciplines[idx]._subjectInput || '').trim();
-    if (!text) return;
-    update(idx, {
-      subjects: [...disciplines[idx].subjects, { name: text }],
-      _subjectInput: '',
+    setDisciplines((prev) => {
+      const text = (prev[idx]?._subjectInput || '').trim();
+      if (!text) return prev;
+      return prev.map((d, i) =>
+        i === idx
+          ? { ...d, subjects: [...d.subjects, { name: text }], _subjectInput: '', _open: true }
+          : d
+      );
     });
+    // Mantém foco no input de assuntos pra continuar digitando
+    setTimeout(() => subjectInputRefs.current[idx]?.focus(), 0);
   };
 
   const removeSubject = (dIdx, sIdx) => {
@@ -75,23 +108,43 @@ export default function AdminCronogramaEditor({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-semibold">Disciplinas e assuntos</Label>
+      <Label className="text-sm font-semibold">Disciplinas e assuntos</Label>
+
+      {/* Inserir disciplina: Enter já cria e abre assuntos */}
+      <div className="flex gap-2">
+        <Input
+          ref={newDiscInputRef}
+          value={newDiscName}
+          onChange={(e) => setNewDiscName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.stopPropagation();
+              addDiscipline();
+            }
+          }}
+          placeholder="Nome da disciplina + Enter"
+          className="h-9 text-sm flex-1"
+        />
         <Button
           type="button"
           size="sm"
           variant="outline"
-          onClick={() => setDisciplines((prev) => [...prev, emptyDiscipline()])}
-          className="gap-1 h-7 text-xs"
+          onClick={addDiscipline}
+          disabled={!newDiscName.trim()}
+          className="gap-1 h-9 text-xs shrink-0"
         >
           <Plus className="w-3.5 h-3.5" />
-          Disciplina
+          Adicionar
         </Button>
       </div>
+      <p className="text-[11px] text-slate-400 -mt-1">
+        Digite o nome e pressione Enter — em seguida já pode cadastrar os assuntos.
+      </p>
 
       {disciplines.length === 0 && (
         <p className="text-xs text-slate-400 py-3 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-lg">
-          Nenhuma disciplina. Clique em &quot;Disciplina&quot; para adicionar.
+          Nenhuma disciplina ainda.
         </p>
       )}
 
@@ -108,8 +161,16 @@ export default function AdminCronogramaEditor({
             <Input
               value={d.name}
               onChange={(e) => update(idx, { name: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  update(idx, { _open: true });
+                  setFocusSubjectIdx(idx);
+                }
+              }}
               placeholder="Nome da disciplina"
-              className="h-8 text-sm flex-1"
+              className="h-8 text-sm flex-1 font-medium"
             />
             <select
               value={d.color}
@@ -142,7 +203,7 @@ export default function AdminCronogramaEditor({
 
           {d._open && (
             <div className="px-3 py-3 space-y-2">
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 min-h-[24px]">
                 {d.subjects.map((s, sIdx) => (
                   <span
                     key={sIdx}
@@ -155,20 +216,22 @@ export default function AdminCronogramaEditor({
                   </span>
                 ))}
                 {d.subjects.length === 0 && (
-                  <span className="text-xs text-slate-400">Sem assuntos ainda</span>
+                  <span className="text-xs text-slate-400">Digite um assunto e pressione Enter</span>
                 )}
               </div>
               <div className="flex gap-2">
                 <Input
+                  ref={(el) => { subjectInputRefs.current[idx] = el; }}
                   value={d._subjectInput}
                   onChange={(e) => update(idx, { _subjectInput: e.target.value })}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
+                      e.stopPropagation();
                       addSubject(idx);
                     }
                   }}
-                  placeholder="Novo assunto + Enter"
+                  placeholder="Assunto + Enter (pode adicionar vários)"
                   className="h-8 text-sm flex-1"
                 />
                 <Button type="button" size="sm" variant="outline" onClick={() => addSubject(idx)} className="h-8 px-2">
