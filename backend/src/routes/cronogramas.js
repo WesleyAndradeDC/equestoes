@@ -1,8 +1,8 @@
 import express from 'express';
 import {
   listCronograms, getCronogram, createCronogram, updateCronogram, deleteCronogram,
-  listUserCronograms, getUserCronogram, createUserCronogram, adoptOfficialCronogram,
-  getDayTasks, updateTaskStatus, recalculate, updateSubjectProgress,
+  listUserCronograms, getUserCronogram, createUserCronogram, deleteUserCronogram,
+  adoptOfficialCronogram, getDayTasks, updateTaskStatus, recalculate, updateSubjectProgress,
   getUserCronogramStats, getCalendar, getAvailableDisciplines,
 } from '../controllers/cronogramaController.js';
 import { authenticate, requireActiveSubscription, requireCronogramasBeta } from '../middlewares/auth.js';
@@ -21,6 +21,7 @@ router.get('/disciplines',       ...guard, getAvailableDisciplines);
 router.get('/my',                   ...guard, listUserCronograms);
 router.post('/my',                  ...guard, createUserCronogram);
 router.get('/my/:id',               ...guard, getUserCronogram);
+router.delete('/my/:id',            ...guard, deleteUserCronogram);
 router.get('/my/:id/tasks',         ...guard, getDayTasks);
 router.get('/my/:id/stats',         ...guard, getUserCronogramStats);
 router.get('/my/:id/calendar',      ...guard, getCalendar);

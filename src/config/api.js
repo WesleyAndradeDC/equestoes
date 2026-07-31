@@ -89,6 +89,7 @@ export const API_ENDPOINTS = {
   CRONOGRAMAS_DISCIPLINES: '/cronogramas/disciplines',
   CRONOGRAMAS_MY: '/cronogramas/my',
   CRONOGRAMAS_MY_BY_ID: (id) => `/cronogramas/my/${id}`,
+  CRONOGRAMAS_MY_DELETE: (id) => `/cronogramas/my/${id}`,
   CRONOGRAMAS_MY_TASKS: (id) => `/cronogramas/my/${id}/tasks`,
   CRONOGRAMAS_MY_STATS: (id) => `/cronogramas/my/${id}/stats`,
   CRONOGRAMAS_MY_CALENDAR: (id) => `/cronogramas/my/${id}/calendar`,

@@ -1,15 +1,43 @@
 import prisma from '../config/database.js';
 
-// ─── UTIL ──────────────────────────────────────────────────────────────────────
+// ─── UTIL (fuso America/Sao_Paulo) ─────────────────────────────────────────────
 const WEEK_MAP = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 0 };
+const TZ = 'America/Sao_Paulo';
+
+/** YYYY-MM-DD no fuso de São Paulo */
+function dateStrSP(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+/** Soma N dias a um YYYY-MM-DD e devolve YYYY-MM-DD */
+function addDaysStr(yyyyMmDd, days) {
+  const [y, m, d] = yyyyMmDd.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days, 12, 0, 0));
+  return dt.toISOString().slice(0, 10);
+}
+
+function weekdayFromDateStr(yyyyMmDd) {
+  const [y, m, d] = yyyyMmDd.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 12, 0, 0)).getUTCDay();
+}
+
+function nextStudyDateStr(fromStr, studyDayNums) {
+  let cur = fromStr;
+  for (let i = 0; i < 21; i++) {
+    if (studyDayNums.includes(weekdayFromDateStr(cur))) return cur;
+    cur = addDaysStr(cur, 1);
+  }
+  return cur;
+}
 
 /**
  * Gera tarefas diárias para um user_cronogram.
- * Algoritmo:
- *  - Ordena assuntos por dificuldade desc (disciplinas mais difíceis primeiro)
- *  - Distribui N disciplinas/dia
- *  - Alterna tipo humanas/exatas quando possível
- *  - Respeita dias da semana configurados
+ * Prioriza disciplinas difíceis, N disciplinas/dia, respeita study_days.
  */
 async function generateDailyTasks(userCronogramId) {
   const uc = await prisma.userCronogram.findUnique({
@@ -18,70 +46,68 @@ async function generateDailyTasks(userCronogramId) {
       disciplines: {
         orderBy: { difficulty: 'desc' },
         include: {
-          subjects: {
-            where: { required: true },
-            orderBy: { display_order: 'asc' },
-          },
+          subjects: { orderBy: { display_order: 'asc' } },
         },
       },
     },
   });
-  if (!uc) return;
+  if (!uc) return { created: 0 };
 
-  // Apaga tarefas antigas pendentes
   await prisma.userDailyTask.deleteMany({
     where: { user_cronogram_id: userCronogramId, status: 'pending' },
   });
 
+  // Não regenera assuntos já concluídos
+  const completed = await prisma.userSubjectProgress.findMany({
+    where: { user_cronogram_id: userCronogramId, status: 'completed' },
+    select: { subject_id: true },
+  });
+  const completedSet = new Set(completed.map((c) => c.subject_id));
+
   const studyDayNums = (uc.study_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']).map(
     (d) => WEEK_MAP[d] ?? 1
   );
-  const disciplinesPerDay = uc.disciplines_per_day || 2;
+  const disciplinesPerDay = Math.max(1, uc.disciplines_per_day || 2);
 
-  // Flatten: subjects grouped by discipline, preserving discipline metadata
   const disciplineQueue = uc.disciplines
-    .filter((d) => d.subjects.length > 0)
-    .map((d) => ({ ...d, remaining: [...d.subjects] }));
+    .map((d) => ({
+      ...d,
+      remaining: d.subjects.filter((s) => !completedSet.has(s.id)),
+    }))
+    .filter((d) => d.remaining.length > 0);
 
-  if (disciplineQueue.length === 0) return;
+  if (disciplineQueue.length === 0) {
+    await prisma.userCronogram.update({
+      where: { id: userCronogramId },
+      data: { total_days: uc.total_days || 0 },
+    });
+    return { created: 0 };
+  }
 
+  const totalSubjects = disciplineQueue.reduce((s, d) => s + d.remaining.length, 0);
+  const maxDays = totalSubjects + 14;
   let tasksBatch = [];
   let dayNumber = 1;
-  let date = new Date(uc.started_at || new Date());
-
-  // Advance to next valid study day
-  const nextStudyDate = (from) => {
-    const d = new Date(from);
-    for (let i = 0; i < 14; i++) {
-      if (studyDayNums.includes(d.getDay())) return new Date(d);
-      d.setDate(d.getDate() + 1);
-    }
-    return d;
-  };
-
-  date = nextStudyDate(date);
-
-  // Total subjects
-  const totalSubjects = disciplineQueue.reduce((s, d) => s + d.remaining.length, 0);
-  const maxDays = Math.ceil(totalSubjects / disciplinesPerDay) + 5;
-
-  let globalOrder = 0;
   let subjectsPlaced = 0;
+  let dateStr = nextStudyDateStr(dateStrSP(), studyDayNums);
+  let cursor = 0; // round-robin entre disciplinas
 
   while (subjectsPlaced < totalSubjects && dayNumber <= maxDays) {
-    const dateStr = date.toISOString().slice(0, 10);
-
-    // Pick disciplines for this day (round-robin with difficulty priority)
-    const activeDisciplines = disciplineQueue.filter((d) => d.remaining.length > 0);
-    if (activeDisciplines.length === 0) break;
-
-    const dayDisciplines = activeDisciplines.slice(0, disciplinesPerDay);
+    const active = disciplineQueue.filter((d) => d.remaining.length > 0);
+    if (active.length === 0) break;
 
     let orderInDay = 0;
-    for (const disc of dayDisciplines) {
+    const picked = [];
+    // Round-robin a partir do cursor
+    for (let n = 0; n < Math.min(disciplinesPerDay, active.length); n++) {
+      const idx = (cursor + n) % active.length;
+      picked.push(active[idx]);
+    }
+    cursor = (cursor + 1) % Math.max(active.length, 1);
+
+    for (const disc of picked) {
       const subject = disc.remaining.shift();
       if (!subject) continue;
-
       tasksBatch.push({
         user_cronogram_id: userCronogramId,
         subject_id: subject.id,
@@ -95,10 +121,8 @@ async function generateDailyTasks(userCronogramId) {
     }
 
     dayNumber++;
-    date.setDate(date.getDate() + 1);
-    date = nextStudyDate(date);
+    dateStr = nextStudyDateStr(addDaysStr(dateStr, 1), studyDayNums);
 
-    // Batch insert every 100
     if (tasksBatch.length >= 100) {
       await prisma.userDailyTask.createMany({ data: tasksBatch });
       tasksBatch = [];
@@ -109,11 +133,12 @@ async function generateDailyTasks(userCronogramId) {
     await prisma.userDailyTask.createMany({ data: tasksBatch });
   }
 
-  // Update total_days
   await prisma.userCronogram.update({
     where: { id: userCronogramId },
     data: { total_days: dayNumber - 1 },
   });
+
+  return { created: subjectsPlaced };
 }
 
 // ─── CRONOGRAMS (OFICIAIS/ADMIN) ───────────────────────────────────────────────
@@ -283,7 +308,7 @@ export const listUserCronograms = async (req, res) => {
         disciplines: {
           include: {
             subjects: {
-              include: { progress: { where: { user_cronogram_id: { not: undefined } } } },
+              include: { progress: true },
             },
           },
         },
@@ -336,8 +361,34 @@ export const createUserCronogram = async (req, res) => {
     } = req.body;
 
     if (!title) return res.status(400).json({ error: 'Título obrigatório' });
+    if (!Array.isArray(disciplines) || disciplines.length === 0) {
+      return res.status(400).json({ error: 'Selecione ao menos uma disciplina' });
+    }
 
-    // Se for oficial, verifica se já possui cópia
+    const normalized = disciplines.map((d, i) => {
+      const subjects = (d.subjects || [])
+        .map((s, j) => ({
+          name: typeof s === 'string' ? s.trim() : String(s?.name || '').trim(),
+          display_order: j,
+          suggested_minutes: s?.suggested_minutes ?? 60,
+          ...(s?.source_subject_id ? { source_subject_id: s.source_subject_id } : {}),
+        }))
+        .filter((s) => s.name);
+      return {
+        name: String(d.name || '').trim(),
+        display_order: i,
+        color: d.color || 'blue',
+        difficulty: Math.min(5, Math.max(1, Number(d.difficulty) || 3)),
+        weight: Math.min(5, Math.max(1, Number(d.difficulty) || 3)),
+        ...(d.source_discipline_id ? { source_discipline_id: d.source_discipline_id } : {}),
+        subjects,
+      };
+    }).filter((d) => d.name && d.subjects.length > 0);
+
+    if (normalized.length === 0) {
+      return res.status(400).json({ error: 'Cada disciplina precisa de ao menos um assunto' });
+    }
+
     if (cronogram_id) {
       const existing = await prisma.userCronogram.findFirst({
         where: { user_id: userId, cronogram_id },
@@ -347,42 +398,40 @@ export const createUserCronogram = async (req, res) => {
       }
     }
 
-    // Monta disciplines data
-    const disciplinesData = disciplines.map((d, i) => ({
-      name: d.name,
-      display_order: i,
-      color: d.color || 'blue',
-      difficulty: d.difficulty ?? 3,
-      weight: d.difficulty ?? 3, // peso = dificuldade para distribuição
-      source_discipline_id: d.source_discipline_id || null,
-      subjects: {
-        create: (d.subjects || []).map((s, j) => ({
-          name: s.name,
-          display_order: j,
-          suggested_minutes: s.suggested_minutes ?? 60,
-          source_subject_id: s.source_subject_id || null,
-        })),
-      },
-    }));
-
     const uc = await prisma.userCronogram.create({
       data: {
         user_id: userId,
-        cronogram_id: cronogram_id || null,
+        ...(cronogram_id ? { cronogram_id } : {}),
         title,
-        contest,
-        type,
+        contest: contest || null,
+        type: type || 'custom',
         disciplines_per_day: Number(disciplines_per_day) || 2,
-        study_days: study_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+        study_days: study_days?.length ? study_days : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
         daily_minutes: Number(daily_minutes) || 120,
-        target_date: target_date || null,
+        ...(target_date ? { target_date } : {}),
         status: 'active',
-        disciplines: { create: disciplinesData },
+        disciplines: {
+          create: normalized.map((d) => ({
+            name: d.name,
+            display_order: d.display_order,
+            color: d.color,
+            difficulty: d.difficulty,
+            weight: d.weight,
+            ...(d.source_discipline_id ? { source_discipline_id: d.source_discipline_id } : {}),
+            subjects: {
+              create: d.subjects.map((s) => ({
+                name: s.name,
+                display_order: s.display_order,
+                suggested_minutes: s.suggested_minutes,
+                ...(s.source_subject_id ? { source_subject_id: s.source_subject_id } : {}),
+              })),
+            },
+          })),
+        },
       },
       include: { disciplines: { include: { subjects: true } } },
     });
 
-    // Criar progresso inicial para cada assunto
     const allSubjects = uc.disciplines.flatMap((d) => d.subjects);
     if (allSubjects.length > 0) {
       await prisma.userSubjectProgress.createMany({
@@ -391,21 +440,16 @@ export const createUserCronogram = async (req, res) => {
           subject_id: s.id,
           status: 'not_started',
         })),
+        skipDuplicates: true,
       });
     }
 
-    // Gerar tarefas diárias
-    await generateDailyTasks(uc.id);
+    try {
+      await generateDailyTasks(uc.id);
+    } catch (genErr) {
+      console.error('generateDailyTasks after create failed:', genErr);
+    }
 
-    const result = await prisma.userCronogram.findUnique({
-      where: { id: uc.id },
-      include: {
-        disciplines: { include: { subjects: true } },
-        _count: { select: { daily_tasks: true } },
-      },
-    });
-
-    // Incrementar contador do cronograma oficial
     if (cronogram_id) {
       await prisma.cronogram.update({
         where: { id: cronogram_id },
@@ -413,10 +457,43 @@ export const createUserCronogram = async (req, res) => {
       }).catch(() => {});
     }
 
+    const result = await prisma.userCronogram.findUnique({
+      where: { id: uc.id },
+      include: {
+        disciplines: { include: { subjects: { include: { progress: true } } } },
+        _count: { select: { daily_tasks: true } },
+      },
+    });
+
     res.status(201).json(result);
   } catch (err) {
     console.error('createUserCronogram error:', err);
-    res.status(500).json({ error: 'Erro ao criar cronograma' });
+    res.status(500).json({ error: 'Erro ao criar cronograma', detail: err.message });
+  }
+};
+
+/** Excluir cronograma do usuário */
+export const deleteUserCronogram = async (req, res) => {
+  try {
+    const uc = await prisma.userCronogram.findFirst({
+      where: { id: req.params.id, user_id: req.user.id },
+      select: { id: true, cronogram_id: true },
+    });
+    if (!uc) return res.status(404).json({ error: 'Não encontrado' });
+
+    await prisma.userCronogram.delete({ where: { id: uc.id } });
+
+    if (uc.cronogram_id) {
+      await prisma.cronogram.update({
+        where: { id: uc.cronogram_id },
+        data: { students_count: { decrement: 1 } },
+      }).catch(() => {});
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('deleteUserCronogram error:', err);
+    res.status(500).json({ error: 'Erro ao excluir cronograma' });
   }
 };
 
@@ -491,7 +568,12 @@ export const adoptOfficialCronogram = async (req, res) => {
       });
     }
 
-    await generateDailyTasks(uc.id);
+    try {
+      await generateDailyTasks(uc.id);
+    } catch (genErr) {
+      console.error('generateDailyTasks after adopt failed:', genErr);
+    }
+
     await prisma.cronogram.update({
       where: { id: cronogram_id },
       data: { students_count: { increment: 1 } },
@@ -499,11 +581,11 @@ export const adoptOfficialCronogram = async (req, res) => {
 
     res.status(201).json(await prisma.userCronogram.findUnique({
       where: { id: uc.id },
-      include: { disciplines: { include: { subjects: true } } },
+      include: { disciplines: { include: { subjects: { include: { progress: true } } } } },
     }));
   } catch (err) {
     console.error('adoptOfficialCronogram error:', err);
-    res.status(500).json({ error: 'Erro ao adotar cronograma' });
+    res.status(500).json({ error: 'Erro ao adotar cronograma', detail: err.message });
   }
 };
 
@@ -511,9 +593,9 @@ export const adoptOfficialCronogram = async (req, res) => {
 export const getDayTasks = async (req, res) => {
   try {
     const { id } = req.params;
-    const { date } = req.query; // YYYY-MM-DD, default today
+    const { date } = req.query; // YYYY-MM-DD, default today (SP)
 
-    const targetDate = date || new Date().toISOString().slice(0, 10);
+    const targetDate = date || dateStrSP();
 
     const uc = await prisma.userCronogram.findFirst({
       where: { id, user_id: req.user.id },
@@ -582,12 +664,10 @@ export const updateTaskStatus = async (req, res) => {
     }
 
     // Atualiza streak e days_studied
-    const today = new Date().toISOString().slice(0, 10);
+    const today = dateStrSP();
     const ucFull = await prisma.userCronogram.findUnique({ where: { id: task.user_cronogram_id } });
     if (ucFull.last_study_date !== today) {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+      const yesterdayStr = addDaysStr(today, -1);
       const newStreak = ucFull.last_study_date === yesterdayStr ? ucFull.streak + 1 : 1;
       await prisma.userCronogram.update({
         where: { id: task.user_cronogram_id },
@@ -624,6 +704,10 @@ export const updateSubjectProgress = async (req, res) => {
   try {
     const { id, subjectId } = req.params;
     const { status, notes } = req.body;
+    const allowed = ['not_started', 'in_progress', 'completed'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ error: 'Status inválido' });
+    }
 
     const uc = await prisma.userCronogram.findFirst({
       where: { id, user_id: req.user.id },
@@ -631,24 +715,44 @@ export const updateSubjectProgress = async (req, res) => {
     });
     if (!uc) return res.status(403).json({ error: 'Acesso negado' });
 
+    const subject = await prisma.userCronogramSubject.findFirst({
+      where: { id: subjectId, discipline: { user_cronogram_id: id } },
+      select: { id: true },
+    });
+    if (!subject) return res.status(404).json({ error: 'Assunto não encontrado' });
+
     const prog = await prisma.userSubjectProgress.upsert({
       where: { user_cronogram_id_subject_id: { user_cronogram_id: id, subject_id: subjectId } },
-      create: { user_cronogram_id: id, subject_id: subjectId, status, notes },
-      update: { status, notes, ...(status === 'completed' ? { completed_at: new Date() } : {}) },
+      create: {
+        user_cronogram_id: id,
+        subject_id: subjectId,
+        status,
+        notes: notes ?? null,
+        completed_at: status === 'completed' ? new Date() : null,
+      },
+      update: {
+        status,
+        ...(notes !== undefined ? { notes } : {}),
+        completed_at: status === 'completed' ? new Date() : null,
+      },
     });
 
-    // Marcar tasks do assunto como concluídas também
     if (status === 'completed') {
       await prisma.userDailyTask.updateMany({
-        where: { user_cronogram_id: id, subject_id: subjectId, status: 'pending' },
+        where: { user_cronogram_id: id, subject_id: subjectId, status: { in: ['pending', 'skipped'] } },
         data: { status: 'completed', completed_at: new Date() },
+      });
+    } else if (status === 'not_started') {
+      await prisma.userDailyTask.updateMany({
+        where: { user_cronogram_id: id, subject_id: subjectId, status: 'completed' },
+        data: { status: 'pending', completed_at: null },
       });
     }
 
     res.json(prog);
   } catch (err) {
     console.error('updateSubjectProgress error:', err);
-    res.status(500).json({ error: 'Erro ao atualizar progresso' });
+    res.status(500).json({ error: 'Erro ao atualizar progresso', detail: err.message });
   }
 };
 
@@ -752,11 +856,23 @@ export const getCalendar = async (req, res) => {
 export const getAvailableDisciplines = async (req, res) => {
   try {
     const rows = await prisma.$queryRaw`
-      SELECT DISTINCT discipline, array_agg(DISTINCT s) AS subjects
-      FROM questions, unnest(subjects) AS s
-      WHERE discipline IS NOT NULL AND discipline <> ''
-      GROUP BY discipline
-      ORDER BY discipline
+      SELECT
+        q.discipline,
+        COALESCE(
+          (
+            SELECT array_agg(DISTINCT s ORDER BY s)
+            FROM questions q2, unnest(q2.subjects) AS s
+            WHERE q2.discipline = q.discipline
+              AND s IS NOT NULL AND s <> ''
+          ),
+          ARRAY[]::text[]
+        ) AS subjects
+      FROM (
+        SELECT DISTINCT discipline
+        FROM questions
+        WHERE discipline IS NOT NULL AND discipline <> ''
+      ) q
+      ORDER BY q.discipline
     `;
     res.json(rows.map((r) => ({ discipline: r.discipline, subjects: r.subjects || [] })));
   } catch (err) {

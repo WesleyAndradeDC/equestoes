@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, CalendarDays, Plus, Lock } from 'lucide-react';
+import { Loader2, CalendarDays, Plus, Lock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import CronogramaWizard from '@/components/cronogramas/CronogramaWizard';
@@ -9,6 +9,7 @@ import CronogramaDashboard from '@/components/cronogramas/CronogramaDashboard';
 import cronogramaService from '@/services/cronogramaService';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasCronogramasAccess } from '@/config/cronogramasAccess';
+import { toast } from 'sonner';
 
 const STATUS_COLOR = {
   active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
@@ -24,47 +25,70 @@ const STATUS_LABEL = {
   archived: 'Arquivado',
 };
 
-function CronogramaCard({ uc, onSelect }) {
+function subjectStatus(s) {
+  if (Array.isArray(s.progress) && s.progress.length > 0) return s.progress[0].status;
+  return 'not_started';
+}
+
+function CronogramaCard({ uc, onSelect, onDelete, deleting }) {
   const subjects = uc.disciplines?.flatMap((d) => d.subjects) || [];
-  const completed = subjects.filter((s) => s.progress?.[0]?.status === 'completed').length;
+  const completed = subjects.filter((s) => subjectStatus(s) === 'completed').length;
   const pct = subjects.length > 0 ? Math.round((completed / subjects.length) * 100) : 0;
 
   return (
-    <button
-      onClick={() => onSelect(uc)}
-      className="w-full text-left bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-[#2f456d]/40 hover:shadow-md transition-all group space-y-3"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h3 className="font-bold text-slate-800 dark:text-white group-hover:text-[#2f456d] dark:group-hover:text-blue-400 transition-colors">
-            {uc.title}
-          </h3>
-          {uc.contest && <p className="text-xs text-[#f26836] font-medium mt-0.5">{uc.contest}</p>}
+    <div className="relative bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-[#2f456d]/40 hover:shadow-md transition-all group space-y-3">
+      <button
+        type="button"
+        onClick={() => onSelect(uc)}
+        className="w-full text-left space-y-3"
+      >
+        <div className="flex items-start justify-between gap-2 pr-8">
+          <div>
+            <h3 className="font-bold text-slate-800 dark:text-white group-hover:text-[#2f456d] dark:group-hover:text-blue-400 transition-colors">
+              {uc.title}
+            </h3>
+            {uc.contest && <p className="text-xs text-[#f26836] font-medium mt-0.5">{uc.contest}</p>}
+          </div>
+          <Badge className={`text-xs shrink-0 ${STATUS_COLOR[uc.status] || STATUS_COLOR.active}`}>
+            {STATUS_LABEL[uc.status] || uc.status}
+          </Badge>
         </div>
-        <Badge className={`text-xs shrink-0 ${STATUS_COLOR[uc.status] || STATUS_COLOR.active}`}>
-          {STATUS_LABEL[uc.status] || uc.status}
-        </Badge>
-      </div>
 
-      <div className="space-y-1">
-        <div className="flex justify-between text-xs text-slate-500">
-          <span>{pct}% concluído</span>
-          <span>{completed}/{subjects.length} assuntos</span>
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-slate-500">
+            <span>{pct}% concluído</span>
+            <span>{completed}/{subjects.length} assuntos</span>
+          </div>
+          <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#2f456d] to-[#f26836] rounded-full transition-all"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
         </div>
-        <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-[#2f456d] to-[#f26836] rounded-full transition-all"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
 
-      <div className="flex items-center gap-3 text-xs text-slate-400">
-        <span>{uc.disciplines?.length || 0} disciplinas</span>
-        {uc.streak > 0 && <span>🔥 {uc.streak} dias</span>}
-        {uc.type === 'official' && <Badge variant="outline" className="text-xs">Oficial</Badge>}
-      </div>
-    </button>
+        <div className="flex items-center gap-3 text-xs text-slate-400">
+          <span>{uc.disciplines?.length || 0} disciplinas</span>
+          {uc.streak > 0 && <span>{uc.streak} dias seguidos</span>}
+          {uc.type === 'official' && <Badge variant="outline" className="text-xs">Oficial</Badge>}
+        </div>
+      </button>
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        disabled={deleting}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(uc);
+        }}
+        className="absolute top-3 right-3 h-8 w-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+        title="Excluir cronograma"
+      >
+        <Trash2 className="w-4 h-4" />
+      </Button>
+    </div>
   );
 }
 
@@ -79,8 +103,18 @@ export default function Cronogramas() {
   const { data: userCronogramas = [], isLoading } = useQuery({
     queryKey: ['user-cronogramas'],
     queryFn: () => cronogramaService.listMy(),
-    staleTime: 60_000,
+    staleTime: 30_000,
     enabled: allowed,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => cronogramaService.deleteMy(id),
+    onSuccess: () => {
+      toast.success('Cronograma excluído');
+      qc.invalidateQueries({ queryKey: ['user-cronogramas'] });
+      setSelectedUc(null);
+    },
+    onError: (err) => toast.error(err?.message || 'Erro ao excluir'),
   });
 
   if (user && !allowed) {
@@ -104,7 +138,11 @@ export default function Cronogramas() {
     setSelectedUc(newUc);
   };
 
-  // Loading
+  const handleDelete = (uc) => {
+    if (!window.confirm(`Excluir "${uc.title}"? Todo o progresso será perdido.`)) return;
+    deleteMutation.mutate(uc.id);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -113,7 +151,6 @@ export default function Cronogramas() {
     );
   }
 
-  // Wizard
   if (showWizard) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -122,17 +159,16 @@ export default function Cronogramas() {
     );
   }
 
-  // Dashboard de um cronograma específico
   if (selectedUc) {
     return (
       <CronogramaDashboard
         uc={selectedUc}
         onBack={() => setSelectedUc(null)}
+        onDelete={() => handleDelete(selectedUc)}
       />
     );
   }
 
-  // Primeiro acesso: sem cronogramas → Wizard automático
   if (userCronogramas.length === 0) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -141,7 +177,6 @@ export default function Cronogramas() {
     );
   }
 
-  // Lista de cronogramas
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -165,7 +200,13 @@ export default function Cronogramas() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {userCronogramas.map((uc) => (
-          <CronogramaCard key={uc.id} uc={uc} onSelect={setSelectedUc} />
+          <CronogramaCard
+            key={uc.id}
+            uc={uc}
+            onSelect={setSelectedUc}
+            onDelete={handleDelete}
+            deleting={deleteMutation.isPending}
+          />
         ))}
       </div>
     </div>

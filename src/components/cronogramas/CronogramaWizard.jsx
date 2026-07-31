@@ -8,12 +8,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
   CheckCircle2, Circle, Star, BookOpen, Calendar, Clock, ChevronRight,
-  ChevronLeft, Sparkles, Trophy, Users, ArrowRight, Search,
+  ChevronLeft, Sparkles, Trophy, Users, ArrowRight, Search, Plus, ChevronDown,
 } from 'lucide-react';
 import cronogramaService from '@/services/cronogramaService';
 import { toast } from 'sonner';
 
 const COLORS = ['blue', 'emerald', 'violet', 'orange', 'rose', 'cyan', 'amber', 'teal'];
+const COLOR_LABELS = {
+  blue: 'Azul',
+  emerald: 'Verde',
+  violet: 'Roxo',
+  orange: 'Laranja',
+  rose: 'Rosa',
+  cyan: 'Ciano',
+  amber: 'Âmbar',
+  teal: 'Verde-água',
+};
 const COLOR_MAP = {
   blue: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300',
   emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300',
@@ -112,12 +122,14 @@ export default function CronogramaWizard({ onComplete }) {
   const [search, setSearch] = useState('');
 
   // Custom wizard state
+  // selectedDisciplines: [{ name, allSubjects[], subjects[], color, difficulty, expanded }]
   const [contest, setContest] = useState('');
-  const [selectedDisciplines, setSelectedDisciplines] = useState([]); // [{ name, subjects, color, difficulty }]
+  const [selectedDisciplines, setSelectedDisciplines] = useState([]);
   const [disciplinesPerDay, setDisciplinesPerDay] = useState(2);
   const [studyDaysOption, setStudyDaysOption] = useState('weekdays');
   const [customDays, setCustomDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
   const [dailyMinutes, setDailyMinutes] = useState(120);
+  const [newSubjectInput, setNewSubjectInput] = useState({}); // { [disciplineName]: string }
 
   const { data: officialData } = useQuery({
     queryKey: ['cronograms-official'],
@@ -137,7 +149,7 @@ export default function CronogramaWizard({ onComplete }) {
       toast.success('Cronograma criado com sucesso!');
       onComplete(data);
     },
-    onError: () => toast.error('Erro ao criar cronograma'),
+    onError: (err) => toast.error(err?.message || 'Erro ao criar cronograma'),
   });
 
   const adoptMutation = useMutation({
@@ -170,16 +182,49 @@ export default function CronogramaWizard({ onComplete }) {
       setSelectedDisciplines((prev) => prev.filter((d) => d.name !== disc.discipline));
     } else {
       const color = COLORS[selectedDisciplines.length % COLORS.length];
+      const allSubjects = (disc.subjects || []).map((s) => (typeof s === 'string' ? s : s.name)).filter(Boolean);
       setSelectedDisciplines((prev) => [
         ...prev,
         {
           name: disc.discipline,
-          subjects: disc.subjects.map((s, i) => ({ name: s, display_order: i })),
+          allSubjects,
+          subjects: [...allSubjects], // selecionados (todos por padrão)
           color,
           difficulty: 3,
+          expanded: true,
         },
       ]);
     }
+  };
+
+  const toggleSubject = (discName, subjectName) => {
+    setSelectedDisciplines((prev) =>
+      prev.map((d) => {
+        if (d.name !== discName) return d;
+        const has = d.subjects.includes(subjectName);
+        return {
+          ...d,
+          subjects: has ? d.subjects.filter((s) => s !== subjectName) : [...d.subjects, subjectName],
+        };
+      })
+    );
+  };
+
+  const addCustomSubject = (discName) => {
+    const value = (newSubjectInput[discName] || '').trim();
+    if (!value) return;
+    setSelectedDisciplines((prev) =>
+      prev.map((d) => {
+        if (d.name !== discName) return d;
+        if (d.allSubjects.includes(value) || d.subjects.includes(value)) return d;
+        return {
+          ...d,
+          allSubjects: [...d.allSubjects, value],
+          subjects: [...d.subjects, value],
+        };
+      })
+    );
+    setNewSubjectInput((prev) => ({ ...prev, [discName]: '' }));
   };
 
   const setDisciplineDifficulty = (name, diff) => {
@@ -189,16 +234,24 @@ export default function CronogramaWizard({ onComplete }) {
   };
 
   const handleFinish = () => {
-    const disciplines = selectedDisciplines.map((d, i) => ({
-      name: d.name,
-      color: d.color,
-      difficulty: d.difficulty,
-      display_order: i,
-      subjects: d.subjects.map((s, j) => ({ name: s.name || s, display_order: j })),
-    }));
+    const disciplines = selectedDisciplines
+      .map((d, i) => ({
+        name: d.name,
+        color: d.color,
+        difficulty: d.difficulty,
+        display_order: i,
+        subjects: d.subjects.map((name, j) => ({ name, display_order: j })),
+      }))
+      .filter((d) => d.subjects.length > 0);
+
+    if (disciplines.length === 0) {
+      toast.error('Selecione ao menos um assunto em cada disciplina');
+      return;
+    }
+
     createMutation.mutate({
       title: contest ? `Cronograma ${contest}` : 'Meu Cronograma de Estudos',
-      contest,
+      contest: contest || undefined,
       type: 'custom',
       disciplines_per_day: disciplinesPerDay,
       study_days: studyDays,
@@ -206,6 +259,9 @@ export default function CronogramaWizard({ onComplete }) {
       disciplines,
     });
   };
+
+  const canGoNextFromStep3 = selectedDisciplines.length > 0
+    && selectedDisciplines.every((d) => d.subjects.length > 0);
 
   const filteredDisciplines = useMemo(() => {
     const list = disciplinesData || [];
@@ -341,15 +397,13 @@ export default function CronogramaWizard({ onComplete }) {
         </div>
       )}
 
-      {/* STEP 3: Disciplinas */}
+      {/* STEP 3: Disciplinas + assuntos */}
       {step === 3 && (
         <div className="space-y-4">
           <div className="space-y-1">
             <h2 className="text-2xl font-bold text-[#2f456d] dark:text-white">Selecione as disciplinas</h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm">
-              {selectedDisciplines.length > 0
-                ? `${selectedDisciplines.length} selecionada${selectedDisciplines.length > 1 ? 's' : ''}`
-                : 'Selecione ao menos 1 disciplina'}
+              Marque a disciplina e escolha os assuntos. Pode criar assuntos novos.
             </p>
           </div>
           <div className="relative">
@@ -361,34 +415,114 @@ export default function CronogramaWizard({ onComplete }) {
               className="pl-9"
             />
           </div>
-          <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+          <div className="max-h-[28rem] overflow-y-auto space-y-2 pr-1">
             {filteredDisciplines.map((disc) => {
               const selected = selectedDisciplines.find((d) => d.name === disc.discipline);
               return (
-                <button
+                <div
                   key={disc.discipline}
-                  onClick={() => toggleDiscipline(disc)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                  className={`rounded-xl border-2 transition-all ${
                     selected
                       ? 'border-[#2f456d] bg-[#2f456d]/5 dark:bg-[#2f456d]/20'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      : 'border-slate-200 dark:border-slate-700'
                   }`}
                 >
-                  {selected ? (
-                    <CheckCircle2 className="w-5 h-5 text-[#2f456d] dark:text-blue-400 shrink-0" />
-                  ) : (
-                    <Circle className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-800 dark:text-white text-sm">{disc.discipline}</p>
-                    <p className="text-xs text-slate-400">{disc.subjects?.length || 0} assuntos</p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleDiscipline(disc)}
+                    className="w-full flex items-center gap-3 p-3 text-left"
+                  >
+                    {selected ? (
+                      <CheckCircle2 className="w-5 h-5 text-[#2f456d] dark:text-blue-400 shrink-0" />
+                    ) : (
+                      <Circle className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-800 dark:text-white text-sm">{disc.discipline}</p>
+                      <p className="text-xs text-slate-400">
+                        {selected
+                          ? `${selected.subjects.length} de ${selected.allSubjects.length} assuntos`
+                          : `${disc.subjects?.length || 0} assuntos`}
+                      </p>
+                    </div>
+                    {selected && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${COLOR_MAP[selected.color] || COLOR_MAP.blue}`}>
+                        {COLOR_LABELS[selected.color] || selected.color}
+                      </span>
+                    )}
+                    {selected && <ChevronDown className="w-4 h-4 text-slate-400" />}
+                  </button>
+
                   {selected && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full border ${COLOR_MAP[selected.color] || COLOR_MAP.blue}`}>
-                      {selected.color}
-                    </span>
+                    <div className="px-3 pb-3 space-y-2 border-t border-slate-200/60 dark:border-slate-700/60 pt-2">
+                      <div className="flex gap-2 mb-1">
+                        <button
+                          type="button"
+                          className="text-xs text-[#2f456d] dark:text-blue-300 font-medium"
+                          onClick={() => setSelectedDisciplines((prev) =>
+                            prev.map((d) => d.name === disc.discipline ? { ...d, subjects: [...d.allSubjects] } : d)
+                          )}
+                        >
+                          Marcar todos
+                        </button>
+                        <button
+                          type="button"
+                          className="text-xs text-slate-500 font-medium"
+                          onClick={() => setSelectedDisciplines((prev) =>
+                            prev.map((d) => d.name === disc.discipline ? { ...d, subjects: [] } : d)
+                          )}
+                        >
+                          Limpar
+                        </button>
+                      </div>
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {selected.allSubjects.map((subj) => {
+                          const checked = selected.subjects.includes(subj);
+                          return (
+                            <label
+                              key={subj}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/60 dark:hover:bg-slate-800/60 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleSubject(disc.discipline, subj)}
+                                className="rounded border-slate-300"
+                              />
+                              <span className="text-sm text-slate-700 dark:text-slate-200">{subj}</span>
+                            </label>
+                          );
+                        })}
+                        {selected.allSubjects.length === 0 && (
+                          <p className="text-xs text-slate-400 px-2 py-1">Nenhum assunto na base — crie abaixo</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <Input
+                          value={newSubjectInput[disc.discipline] || ''}
+                          onChange={(e) => setNewSubjectInput((prev) => ({ ...prev, [disc.discipline]: e.target.value }))}
+                          placeholder="Novo assunto..."
+                          className="h-8 text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addCustomSubject(disc.discipline);
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-8 shrink-0"
+                          onClick={() => addCustomSubject(disc.discipline)}
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -558,7 +692,7 @@ export default function CronogramaWizard({ onComplete }) {
               <span className="text-sm font-medium text-slate-800 dark:text-white">{selectedDisciplines.length}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-sm text-slate-500">Assuntos</span>
+              <span className="text-sm text-slate-500">Assuntos selecionados</span>
               <span className="text-sm font-medium text-slate-800 dark:text-white">
                 {selectedDisciplines.reduce((s, d) => s + d.subjects.length, 0)}
               </span>
@@ -581,7 +715,7 @@ export default function CronogramaWizard({ onComplete }) {
           <div className="flex flex-wrap gap-2">
             {selectedDisciplines.map((d) => (
               <Badge key={d.name} className={`text-xs ${COLOR_MAP[d.color] || COLOR_MAP.blue}`}>
-                {d.name} · {DIFF_LABELS[d.difficulty]}
+                {d.name} · {COLOR_LABELS[d.color] || d.color} · {DIFF_LABELS[d.difficulty]} · {d.subjects.length} assuntos
               </Badge>
             ))}
           </div>
@@ -605,7 +739,7 @@ export default function CronogramaWizard({ onComplete }) {
         {step < maxStep ? (
           <Button
             onClick={() => setStep((s) => s + 1)}
-            disabled={step === 3 && selectedDisciplines.length === 0}
+            disabled={step === 3 && !canGoNextFromStep3}
             className="flex-1 bg-[#2f456d] hover:bg-[#1a2d4a] text-white"
           >
             Próximo

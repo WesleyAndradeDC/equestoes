@@ -7,12 +7,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import {
-  CheckCircle2, Circle, Clock, Calendar, BarChart2, BookOpen, RefreshCw,
+  CheckCircle2, Circle, Calendar, BarChart2, BookOpen, RefreshCw,
   Flame, Target, Loader2, ChevronLeft, ChevronRight, Search, SkipForward,
-  Play, FileText, AlertCircle, TrendingUp,
+  FileText, AlertCircle, TrendingUp, Trash2,
 } from 'lucide-react';
 import cronogramaService from '@/services/cronogramaService';
 import { toast } from 'sonner';
+
+/** YYYY-MM-DD no fuso America/Sao_Paulo */
+function dateStrSP(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+function addDaysStr(yyyyMmDd, days) {
+  const [y, m, d] = yyyyMmDd.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days, 12, 0, 0));
+  return dt.toISOString().slice(0, 10);
+}
 
 const STATUS_ICON = {
   not_started: <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600" />,
@@ -49,13 +65,13 @@ function StatCard({ icon, value, label, color = 'blue' }) {
 
 function TodayTasks({ ucId }) {
   const qc = useQueryClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dateStrSP();
   const [selectedDate, setSelectedDate] = useState(today);
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['uc-tasks', ucId, selectedDate],
     queryFn: () => cronogramaService.getDayTasks(ucId, selectedDate),
-    staleTime: 30_000,
+    staleTime: 10_000,
   });
 
   const updateMutation = useMutation({
@@ -63,20 +79,24 @@ function TodayTasks({ ucId }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['uc-tasks', ucId] });
       qc.invalidateQueries({ queryKey: ['uc-stats', ucId] });
+      qc.invalidateQueries({ queryKey: ['uc', ucId] });
     },
-    onError: () => toast.error('Erro ao atualizar tarefa'),
+    onError: (err) => toast.error(err?.message || 'Erro ao atualizar tarefa'),
   });
 
-  const prevDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() - 1);
-    setSelectedDate(d.toISOString().slice(0, 10));
-  };
-  const nextDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(d.toISOString().slice(0, 10));
-  };
+  const recalcMutation = useMutation({
+    mutationFn: () => cronogramaService.recalculate(ucId),
+    onSuccess: () => {
+      toast.success('Tarefas geradas!');
+      qc.invalidateQueries({ queryKey: ['uc-tasks', ucId] });
+      qc.invalidateQueries({ queryKey: ['uc-stats', ucId] });
+      qc.invalidateQueries({ queryKey: ['uc-calendar', ucId] });
+    },
+    onError: (err) => toast.error(err?.message || 'Erro ao gerar tarefas'),
+  });
+
+  const prevDay = () => setSelectedDate((d) => addDaysStr(d, -1));
+  const nextDay = () => setSelectedDate((d) => addDaysStr(d, 1));
 
   const isToday = selectedDate === today;
   const dateLabel = isToday ? 'Hoje' : new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -108,10 +128,22 @@ function TodayTasks({ ucId }) {
       )}
 
       {tasks.length === 0 ? (
-        <div className="text-center py-12 text-slate-400">
-          <Calendar className="w-12 h-12 mx-auto mb-3 opacity-30" />
+        <div className="text-center py-12 text-slate-400 space-y-3">
+          <Calendar className="w-12 h-12 mx-auto opacity-30" />
           <p className="font-medium">Nenhuma tarefa neste dia</p>
-          <p className="text-sm mt-1">Dia de descanso ou fora do cronograma</p>
+          <p className="text-sm">Dia de descanso, fora do cronograma, ou tarefas ainda não geradas</p>
+          {isToday && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={recalcMutation.isPending}
+              onClick={() => recalcMutation.mutate()}
+              className="gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${recalcMutation.isPending ? 'animate-spin' : ''}`} />
+              Gerar / recalcular tarefas
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -180,18 +212,24 @@ function TodayTasks({ ucId }) {
 function EditalVerticalizado({ ucId, disciplines }) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all'); // all | pending | completed
+  const [localStatus, setLocalStatus] = useState({}); // subjectId -> status (optimistic)
   const qc = useQueryClient();
 
   const allSubjects = useMemo(() => {
     return disciplines.flatMap((d) =>
-      d.subjects.map((s) => ({
-        ...s,
-        discipline: d.name,
-        discipline_color: d.color,
-        status: s.progress?.[0]?.status || 'not_started',
-      }))
+      d.subjects.map((s) => {
+        const fromServer = Array.isArray(s.progress) && s.progress[0]?.status
+          ? s.progress[0].status
+          : 'not_started';
+        return {
+          ...s,
+          discipline: d.name,
+          discipline_color: d.color,
+          status: localStatus[s.id] || fromServer,
+        };
+      })
     );
-  }, [disciplines]);
+  }, [disciplines, localStatus]);
 
   const filtered = useMemo(() => {
     let list = allSubjects;
@@ -203,11 +241,21 @@ function EditalVerticalizado({ ucId, disciplines }) {
 
   const updateMutation = useMutation({
     mutationFn: ({ subjectId, status }) => cronogramaService.updateSubjectProgress(ucId, subjectId, { status }),
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
+      setLocalStatus((prev) => ({ ...prev, [vars.subjectId]: vars.status }));
       qc.invalidateQueries({ queryKey: ['uc', ucId] });
       qc.invalidateQueries({ queryKey: ['uc-stats', ucId] });
+      qc.invalidateQueries({ queryKey: ['uc-tasks', ucId] });
+      qc.invalidateQueries({ queryKey: ['user-cronogramas'] });
     },
-    onError: () => toast.error('Erro ao atualizar progresso'),
+    onError: (err, vars) => {
+      setLocalStatus((prev) => {
+        const next = { ...prev };
+        delete next[vars.subjectId];
+        return next;
+      });
+      toast.error(err?.message || 'Erro ao atualizar progresso');
+    },
   });
 
   const completedCount = allSubjects.filter((s) => s.status === 'completed').length;
@@ -215,6 +263,7 @@ function EditalVerticalizado({ ucId, disciplines }) {
 
   const cycleStatus = (s) => {
     const next = s.status === 'not_started' ? 'in_progress' : s.status === 'in_progress' ? 'completed' : 'not_started';
+    setLocalStatus((prev) => ({ ...prev, [s.id]: next }));
     updateMutation.mutate({ subjectId: s.id, status: next });
   };
 
@@ -390,19 +439,19 @@ function CronogramaCalendar({ ucId }) {
   );
 }
 
-export default function CronogramaDashboard({ uc, onBack }) {
+export default function CronogramaDashboard({ uc, onBack, onDelete }) {
   const qc = useQueryClient();
 
   const { data: stats } = useQuery({
     queryKey: ['uc-stats', uc.id],
     queryFn: () => cronogramaService.getStats(uc.id),
-    staleTime: 60_000,
+    staleTime: 15_000,
   });
 
   const { data: ucFull } = useQuery({
     queryKey: ['uc', uc.id],
     queryFn: () => cronogramaService.getMy(uc.id),
-    staleTime: 60_000,
+    staleTime: 10_000,
     initialData: uc,
   });
 
@@ -412,8 +461,9 @@ export default function CronogramaDashboard({ uc, onBack }) {
       toast.success('Cronograma recalculado!');
       qc.invalidateQueries({ queryKey: ['uc-tasks', uc.id] });
       qc.invalidateQueries({ queryKey: ['uc-stats', uc.id] });
+      qc.invalidateQueries({ queryKey: ['uc-calendar', uc.id] });
     },
-    onError: () => toast.error('Erro ao recalcular'),
+    onError: (err) => toast.error(err?.message || 'Erro ao recalcular'),
   });
 
   const disciplines = ucFull?.disciplines || [];
@@ -443,16 +493,29 @@ export default function CronogramaDashboard({ uc, onBack }) {
             </div>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => recalcMutation.mutate()}
-          disabled={recalcMutation.isPending}
-          className="gap-1.5 shrink-0"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${recalcMutation.isPending ? 'animate-spin' : ''}`} />
-          Recalcular
-        </Button>
+        <div className="flex gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => recalcMutation.mutate()}
+            disabled={recalcMutation.isPending}
+            className="gap-1.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${recalcMutation.isPending ? 'animate-spin' : ''}`} />
+            Recalcular
+          </Button>
+          {onDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onDelete}
+              className="gap-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Excluir
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Progresso geral */}

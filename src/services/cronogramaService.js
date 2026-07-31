@@ -33,6 +33,10 @@ class CronogramaService {
     return apiClient.post(API_ENDPOINTS.CRONOGRAMAS_MY, data);
   }
 
+  async deleteMy(id) {
+    return apiClient.delete(API_ENDPOINTS.CRONOGRAMAS_MY_DELETE(id));
+  }
+
   async getDayTasks(id, date) {
     const qs = date ? `?date=${date}` : '';
     return apiClient.get(`${API_ENDPOINTS.CRONOGRAMAS_MY_TASKS(id)}${qs}`);
