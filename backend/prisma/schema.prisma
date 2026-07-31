@@ -479,7 +479,7 @@ model UserDailyTask {
   user_cronogram_id String
   subject_id        String?
   discipline_id     String?
-  scheduled_date    String    // ISO date YYYY-MM-DD
+  scheduled_date    DateTime  @db.Date
   day_number        Int
   display_order     Int       @default(0)
   status            String    @default("pending")  // pending | completed | skipped | rescheduled

@@ -21,6 +21,19 @@ function addDaysStr(yyyyMmDd, days) {
   return dt.toISOString().slice(0, 10);
 }
 
+/** YYYY-MM-DD → Date (noon UTC) para usar como valor DateTime @db.Date no Prisma */
+function dateStrToDate(yyyyMmDd) {
+  const [y, m, d] = yyyyMmDd.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+}
+
+/** Date (de coluna @db.Date) → YYYY-MM-DD string */
+function dateToStr(date) {
+  if (!date) return null;
+  if (typeof date === 'string') return date.slice(0, 10);
+  return new Date(date).toISOString().slice(0, 10);
+}
+
 function weekdayFromDateStr(yyyyMmDd) {
   const [y, m, d] = yyyyMmDd.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d, 12, 0, 0)).getUTCDay();
@@ -112,7 +125,7 @@ async function generateDailyTasks(userCronogramId) {
         user_cronogram_id: userCronogramId,
         subject_id: subject.id,
         discipline_id: disc.id,
-        scheduled_date: dateStr,
+        scheduled_date: dateStrToDate(dateStr),
         day_number: dayNumber,
         display_order: orderInDay++,
         status: 'pending',
@@ -604,7 +617,7 @@ export const getDayTasks = async (req, res) => {
     if (!uc) return res.status(404).json({ error: 'Não encontrado' });
 
     const tasks = await prisma.userDailyTask.findMany({
-      where: { user_cronogram_id: id, scheduled_date: targetDate },
+      where: { user_cronogram_id: id, scheduled_date: dateStrToDate(targetDate) },
       orderBy: { display_order: 'asc' },
       include: {
         subject: true,
@@ -624,6 +637,7 @@ export const getDayTasks = async (req, res) => {
 
     res.json(tasks.map((t) => ({
       ...t,
+      scheduled_date: dateToStr(t.scheduled_date),
       subject_status: t.subject_id ? progressMap[t.subject_id] || 'not_started' : null,
     })));
   } catch (err) {
@@ -654,13 +668,21 @@ export const updateTaskStatus = async (req, res) => {
 
     const updated = await prisma.userDailyTask.update({ where: { id: taskId }, data });
 
-    // Atualiza progresso do assunto se concluído
+    // Atualiza progresso do assunto se concluído (evita compound-key upsert)
     if (status === 'completed' && task.subject_id) {
-      await prisma.userSubjectProgress.upsert({
-        where: { user_cronogram_id_subject_id: { user_cronogram_id: task.user_cronogram_id, subject_id: task.subject_id } },
-        create: { user_cronogram_id: task.user_cronogram_id, subject_id: task.subject_id, status: 'completed', completed_at: new Date() },
-        update: { status: 'completed', completed_at: new Date() },
+      const existingSubjProg = await prisma.userSubjectProgress.findFirst({
+        where: { user_cronogram_id: task.user_cronogram_id, subject_id: task.subject_id },
       });
+      if (existingSubjProg) {
+        await prisma.userSubjectProgress.update({
+          where: { id: existingSubjProg.id },
+          data: { status: 'completed', completed_at: new Date() },
+        });
+      } else {
+        await prisma.userSubjectProgress.create({
+          data: { user_cronogram_id: task.user_cronogram_id, subject_id: task.subject_id, status: 'completed', completed_at: new Date() },
+        });
+      }
     }
 
     // Atualiza streak e days_studied
@@ -721,21 +743,17 @@ export const updateSubjectProgress = async (req, res) => {
     });
     if (!subject) return res.status(404).json({ error: 'Assunto não encontrado' });
 
-    const prog = await prisma.userSubjectProgress.upsert({
-      where: { user_cronogram_id_subject_id: { user_cronogram_id: id, subject_id: subjectId } },
-      create: {
-        user_cronogram_id: id,
-        subject_id: subjectId,
-        status,
-        notes: notes ?? null,
-        completed_at: status === 'completed' ? new Date() : null,
-      },
-      update: {
-        status,
-        ...(notes !== undefined ? { notes } : {}),
-        completed_at: status === 'completed' ? new Date() : null,
-      },
+    const existingProg = await prisma.userSubjectProgress.findFirst({
+      where: { user_cronogram_id: id, subject_id: subjectId },
     });
+    const progData = {
+      status,
+      ...(notes !== undefined ? { notes } : {}),
+      completed_at: status === 'completed' ? new Date() : null,
+    };
+    const prog = existingProg
+      ? await prisma.userSubjectProgress.update({ where: { id: existingProg.id }, data: progData })
+      : await prisma.userSubjectProgress.create({ data: { user_cronogram_id: id, subject_id: subjectId, ...progData } });
 
     if (status === 'completed') {
       await prisma.userDailyTask.updateMany({
@@ -823,21 +841,25 @@ export const getCalendar = async (req, res) => {
 
     const m = Number(month) || new Date().getMonth() + 1;
     const y = Number(year) || new Date().getFullYear();
-    const start = `${y}-${String(m).padStart(2, '0')}-01`;
-    const endDate = new Date(y, m, 0);
-    const end = endDate.toISOString().slice(0, 10);
+    const startStr = `${y}-${String(m).padStart(2, '0')}-01`;
+    // Último dia do mês: Date.UTC(y, m, 0) = último dia do mês m
+    const lastDay = new Date(Date.UTC(y, m, 0, 12, 0, 0));
+    const endStr = lastDay.toISOString().slice(0, 10);
 
     const tasks = await prisma.userDailyTask.findMany({
       where: {
         user_cronogram_id: id,
-        scheduled_date: { gte: start, lte: end },
+        scheduled_date: {
+          gte: dateStrToDate(startStr),
+          lte: dateStrToDate(endStr),
+        },
       },
       select: { scheduled_date: true, status: true },
     });
 
     const byDate = {};
     for (const t of tasks) {
-      const d = t.scheduled_date;
+      const d = dateToStr(t.scheduled_date); // normaliza Date → 'YYYY-MM-DD'
       if (!byDate[d]) byDate[d] = { date: d, total: 0, completed: 0, pending: 0, skipped: 0 };
       byDate[d].total++;
       if (t.status === 'completed') byDate[d].completed++;
