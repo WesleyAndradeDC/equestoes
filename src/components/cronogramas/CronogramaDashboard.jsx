@@ -75,14 +75,29 @@ function TodayTasks({ ucId }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ taskId, status }) => cronogramaService.updateTaskStatus(taskId, { status }),
+    mutationFn: ({ taskId, status }) => cronogramaService.updateTaskStatus(ucId, taskId, { status }),
+    onMutate: async ({ taskId, status }) => {
+      await qc.cancelQueries({ queryKey: ['uc-tasks', ucId, selectedDate] });
+      const prev = qc.getQueryData(['uc-tasks', ucId, selectedDate]);
+      qc.setQueryData(['uc-tasks', ucId, selectedDate], (old = []) =>
+        (Array.isArray(old) ? old : []).map((t) =>
+          t.id === taskId ? { ...t, status, ...(status === 'completed' ? { subject_status: 'completed' } : {}) } : t
+        )
+      );
+      return { prev };
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['uc-tasks', ucId] });
       qc.invalidateQueries({ queryKey: ['uc-stats', ucId] });
       qc.invalidateQueries({ queryKey: ['uc', ucId] });
       qc.invalidateQueries({ queryKey: ['uc-calendar', ucId] });
     },
-    onError: (err) => toast.error(err?.message || 'Erro ao atualizar tarefa'),
+    onError: (err, _vars, ctx) => {
+      if (ctx?.prev !== undefined) {
+        qc.setQueryData(['uc-tasks', ucId, selectedDate], ctx.prev);
+      }
+      toast.error(err?.message || 'Erro ao atualizar tarefa');
+    },
   });
 
   const recalcMutation = useMutation({
@@ -182,22 +197,32 @@ function TodayTasks({ ucId }) {
               {task.status === 'pending' && (
                 <div className="flex gap-2 mt-3 pl-8">
                   <Button
+                    type="button"
                     size="sm"
-                    onClick={() => updateMutation.mutate({ taskId: task.id, status: 'completed' })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      updateMutation.mutate({ taskId: task.id, status: 'completed' });
+                    }}
                     disabled={updateMutation.isPending}
                     className="h-7 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-3"
                   >
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    <CheckCircle2 className="w-3 h-3 mr-1 pointer-events-none" />
                     Concluir
                   </Button>
                   <Button
+                    type="button"
                     size="sm"
                     variant="outline"
-                    onClick={() => updateMutation.mutate({ taskId: task.id, status: 'skipped' })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      updateMutation.mutate({ taskId: task.id, status: 'skipped' });
+                    }}
                     disabled={updateMutation.isPending}
                     className="h-7 text-xs text-slate-500 px-3"
                   >
-                    <SkipForward className="w-3 h-3 mr-1" />
+                    <SkipForward className="w-3 h-3 mr-1 pointer-events-none" />
                     Pular
                   </Button>
                 </div>

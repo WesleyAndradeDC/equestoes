@@ -42,8 +42,8 @@ class CronogramaService {
     return apiClient.get(`${API_ENDPOINTS.CRONOGRAMAS_MY_TASKS(id)}${qs}`);
   }
 
-  async updateTaskStatus(taskId, data) {
-    return apiClient.patch(API_ENDPOINTS.CRONOGRAMAS_TASK_STATUS(taskId), data);
+  async updateTaskStatus(cronogramId, taskId, data) {
+    return apiClient.patch(API_ENDPOINTS.CRONOGRAMAS_TASK_STATUS(cronogramId, taskId), data);
   }
 
   async updateSubjectProgress(cronogramId, subjectId, data) {

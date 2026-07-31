@@ -23,10 +23,11 @@ router.post('/my',                  ...guard, createUserCronogram);
 router.get('/my/:id',               ...guard, getUserCronogram);
 router.delete('/my/:id',            ...guard, deleteUserCronogram);
 router.get('/my/:id/tasks',         ...guard, getDayTasks);
+router.patch('/my/:id/tasks/:taskId', ...guard, updateTaskStatus);
+router.patch('/my/tasks/:taskId',   ...guard, updateTaskStatus); // alias legado
 router.get('/my/:id/stats',         ...guard, getUserCronogramStats);
 router.get('/my/:id/calendar',      ...guard, getCalendar);
 router.post('/my/:id/recalculate',  ...guard, recalculate);
-router.patch('/my/tasks/:taskId',   ...guard, updateTaskStatus);
 router.patch('/my/:id/subjects/:subjectId/progress', ...guard, updateSubjectProgress);
 
 // ── Adotar cronograma oficial ──────────────────────────────────────────────────

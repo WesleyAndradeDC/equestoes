@@ -650,57 +650,101 @@ export const getDayTasks = async (req, res) => {
 export const updateTaskStatus = async (req, res) => {
   try {
     const { taskId } = req.params;
+    let { id } = req.params; // user_cronogram_id (pode vir só pelo alias legado)
     const { status, notes, rescheduled_to } = req.body;
+    const allowed = ['pending', 'completed', 'skipped', 'rescheduled'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ error: 'Status inválido' });
+    }
 
-    const task = await prisma.userDailyTask.findUnique({ where: { id: taskId } });
-    if (!task) return res.status(404).json({ error: 'Tarefa não encontrada' });
+    // Alias legado /my/tasks/:taskId — resolve cronogram via task
+    if (!id) {
+      const bare = await prisma.userDailyTask.findUnique({
+        where: { id: taskId },
+        select: { user_cronogram_id: true },
+      });
+      if (!bare) return res.status(404).json({ error: 'Tarefa não encontrada' });
+      id = bare.user_cronogram_id;
+    }
 
     const uc = await prisma.userCronogram.findFirst({
-      where: { id: task.user_cronogram_id, user_id: req.user.id },
-      select: { id: true },
+      where: { id, user_id: req.user.id },
+      select: { id: true, last_study_date: true, streak: true },
     });
     if (!uc) return res.status(403).json({ error: 'Acesso negado' });
 
+    const task = await prisma.userDailyTask.findFirst({
+      where: { id: taskId, user_cronogram_id: id },
+    });
+    if (!task) return res.status(404).json({ error: 'Tarefa não encontrada' });
+
     const data = { status };
     if (notes !== undefined) data.notes = notes;
-    if (rescheduled_to !== undefined) data.rescheduled_to = rescheduled_to;
+    if (rescheduled_to !== undefined) {
+      data.rescheduled_to = typeof rescheduled_to === 'string'
+        ? rescheduled_to.slice(0, 10)
+        : rescheduled_to;
+    }
     if (status === 'completed') data.completed_at = new Date();
+    else if (status === 'pending') data.completed_at = null;
 
     const updated = await prisma.userDailyTask.update({ where: { id: taskId }, data });
 
-    // Atualiza progresso do assunto se concluído (evita compound-key upsert)
-    if (status === 'completed' && task.subject_id) {
-      const existingSubjProg = await prisma.userSubjectProgress.findFirst({
-        where: { user_cronogram_id: task.user_cronogram_id, subject_id: task.subject_id },
-      });
-      if (existingSubjProg) {
-        await prisma.userSubjectProgress.update({
-          where: { id: existingSubjProg.id },
-          data: { status: 'completed', completed_at: new Date() },
+    // Progresso do assunto + streak (não derruba a resposta se falhar)
+    try {
+      if (status === 'completed' && task.subject_id) {
+        const existingSubjProg = await prisma.userSubjectProgress.findFirst({
+          where: { user_cronogram_id: id, subject_id: task.subject_id },
         });
-      } else {
-        await prisma.userSubjectProgress.create({
-          data: { user_cronogram_id: task.user_cronogram_id, subject_id: task.subject_id, status: 'completed', completed_at: new Date() },
+        if (existingSubjProg) {
+          await prisma.userSubjectProgress.update({
+            where: { id: existingSubjProg.id },
+            data: { status: 'completed', completed_at: new Date() },
+          });
+        } else {
+          await prisma.userSubjectProgress.create({
+            data: {
+              user_cronogram_id: id,
+              subject_id: task.subject_id,
+              status: 'completed',
+              completed_at: new Date(),
+            },
+          });
+        }
+      } else if (status === 'pending' && task.subject_id) {
+        const existingSubjProg = await prisma.userSubjectProgress.findFirst({
+          where: { user_cronogram_id: id, subject_id: task.subject_id },
         });
+        if (existingSubjProg && existingSubjProg.status === 'completed') {
+          await prisma.userSubjectProgress.update({
+            where: { id: existingSubjProg.id },
+            data: { status: 'not_started', completed_at: null },
+          });
+        }
       }
+
+      if (status === 'completed') {
+        const today = dateStrSP();
+        if (uc.last_study_date !== today) {
+          const yesterdayStr = addDaysStr(today, -1);
+          const newStreak = uc.last_study_date === yesterdayStr ? (uc.streak || 0) + 1 : 1;
+          await prisma.userCronogram.update({
+            where: { id },
+            data: { last_study_date: today, streak: newStreak, days_studied: { increment: 1 } },
+          });
+        }
+      }
+    } catch (sideErr) {
+      console.error('updateTaskStatus side-effects error:', sideErr);
     }
 
-    // Atualiza streak e days_studied
-    const today = dateStrSP();
-    const ucFull = await prisma.userCronogram.findUnique({ where: { id: task.user_cronogram_id } });
-    if (ucFull.last_study_date !== today) {
-      const yesterdayStr = addDaysStr(today, -1);
-      const newStreak = ucFull.last_study_date === yesterdayStr ? ucFull.streak + 1 : 1;
-      await prisma.userCronogram.update({
-        where: { id: task.user_cronogram_id },
-        data: { last_study_date: today, streak: newStreak, days_studied: { increment: 1 } },
-      });
-    }
-
-    res.json(updated);
+    res.json({
+      ...updated,
+      scheduled_date: dateToStr(updated.scheduled_date),
+    });
   } catch (err) {
     console.error('updateTaskStatus error:', err);
-    res.status(500).json({ error: 'Erro ao atualizar tarefa' });
+    res.status(500).json({ error: 'Erro ao atualizar tarefa', detail: err.message });
   }
 };
 
