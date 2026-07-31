@@ -50,6 +50,7 @@ import userService from '@/services/userService';
 import reportService from '@/services/reportService';
 import cronogramaService from '@/services/cronogramaService';
 import { hasCronogramasAccess } from '@/config/cronogramasAccess';
+import AdminCronogramaEditor from '@/components/cronogramas/AdminCronogramaEditor';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const SUBSCRIPTION_OPTIONS = [
@@ -377,7 +378,9 @@ export default function Admin() {
 
   const [activeTab, setActiveTab] = useState('users');
   const [cronogramaForm, setCronogramaForm] = useState({ title: '', contest: '', exam_board: '', position: '', description: '', thumbnail_url: '', category: '', is_official: true, is_public: true, status: 'active' });
+  const [cronogramaDisciplines, setCronogramaDisciplines] = useState([]);
   const [showCronogramaForm, setShowCronogramaForm] = useState(false);
+  const [editingCronogramaId, setEditingCronogramaId] = useState(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -431,17 +434,75 @@ export default function Admin() {
     mutationFn: (data) => cronogramaService.adminCreate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-cronogramas'] });
+      queryClient.invalidateQueries({ queryKey: ['cronograms-official'] });
       setShowCronogramaForm(false);
+      setEditingCronogramaId(null);
+      setCronogramaDisciplines([]);
       setCronogramaForm({ title: '', contest: '', exam_board: '', position: '', description: '', thumbnail_url: '', category: '', is_official: true, is_public: true, status: 'active' });
       toast.success('Cronograma criado!');
     },
     onError: (err) => toast.error(err?.message || 'Erro ao criar cronograma'),
   });
 
+  const updateCronogramaMutation = useMutation({
+    mutationFn: ({ id, data }) => cronogramaService.adminUpdate(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-cronogramas'] });
+      queryClient.invalidateQueries({ queryKey: ['cronograms-official'] });
+      setShowCronogramaForm(false);
+      setEditingCronogramaId(null);
+      setCronogramaDisciplines([]);
+      setCronogramaForm({ title: '', contest: '', exam_board: '', position: '', description: '', thumbnail_url: '', category: '', is_official: true, is_public: true, status: 'active' });
+      toast.success('Cronograma atualizado!');
+    },
+    onError: (err) => toast.error(err?.message || 'Erro ao atualizar cronograma'),
+  });
+
+  const publishCronogramaMutation = useMutation({
+    mutationFn: (id) => cronogramaService.adminUpdate(id, { status: 'active', is_official: true, is_public: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-cronogramas'] });
+      queryClient.invalidateQueries({ queryKey: ['cronograms-official'] });
+      toast.success('Cronograma publicado para alunos!');
+    },
+    onError: (err) => toast.error(err?.message || 'Erro ao publicar'),
+  });
+
+  const openEditCronograma = async (c) => {
+    try {
+      const full = await cronogramaService.getById(c.id);
+      setEditingCronogramaId(full.id);
+      setCronogramaForm({
+        title: full.title || '',
+        contest: full.contest || '',
+        exam_board: full.exam_board || '',
+        position: full.position || '',
+        description: full.description || '',
+        thumbnail_url: full.thumbnail_url || '',
+        category: full.category || '',
+        is_official: full.is_official !== false,
+        is_public: full.is_public !== false,
+        status: full.status || 'active',
+      });
+      setCronogramaDisciplines(full.disciplines || []);
+      setShowCronogramaForm(true);
+    } catch (err) {
+      toast.error(err?.message || 'Erro ao carregar cronograma');
+    }
+  };
+
+  const resetCronogramaForm = () => {
+    setShowCronogramaForm(false);
+    setEditingCronogramaId(null);
+    setCronogramaDisciplines([]);
+    setCronogramaForm({ title: '', contest: '', exam_board: '', position: '', description: '', thumbnail_url: '', category: '', is_official: true, is_public: true, status: 'active' });
+  };
+
   const deleteCronogramaMutation = useMutation({
     mutationFn: (id) => cronogramaService.adminDelete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-cronogramas'] });
+      queryClient.invalidateQueries({ queryKey: ['cronograms-official'] });
       toast.success('Cronograma excluído');
     },
     onError: () => toast.error('Erro ao excluir'),
@@ -912,7 +973,10 @@ export default function Admin() {
               Cronogramas Oficiais
             </h2>
             <Button
-              onClick={() => setShowCronogramaForm(true)}
+              onClick={() => {
+                resetCronogramaForm();
+                setShowCronogramaForm(true);
+              }}
               className="bg-[#2f456d] hover:bg-[#1a2d4a] text-white gap-1.5"
               size="sm"
             >
@@ -924,7 +988,9 @@ export default function Admin() {
           {showCronogramaForm && (
             <Card className="border-[#2f456d]/30">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Novo Cronograma Oficial</CardTitle>
+                <CardTitle className="text-base">
+                  {editingCronogramaId ? 'Editar Cronograma Oficial' : 'Novo Cronograma Oficial'}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <form
@@ -932,12 +998,20 @@ export default function Admin() {
                   onSubmit={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (!cronogramaForm.title?.trim() || createCronogramaMutation.isPending) return;
-                    createCronogramaMutation.mutate({
+                    if (!cronogramaForm.title?.trim()) return;
+                    const payload = {
                       ...cronogramaForm,
                       title: cronogramaForm.title.trim(),
                       status: cronogramaForm.status || 'active',
-                    });
+                      is_official: true,
+                      is_public: cronogramaForm.is_public !== false,
+                      disciplines: cronogramaDisciplines,
+                    };
+                    if (editingCronogramaId) {
+                      updateCronogramaMutation.mutate({ id: editingCronogramaId, data: payload });
+                    } else {
+                      createCronogramaMutation.mutate(payload);
+                    }
                   }}
                 >
                   <div className="grid sm:grid-cols-2 gap-3">
@@ -975,7 +1049,7 @@ export default function Admin() {
                     <Label>Descrição</Label>
                     <Textarea value={cronogramaForm.description} onChange={(e) => setCronogramaForm((f) => ({ ...f, description: e.target.value }))} placeholder="Descrição do cronograma..." rows={2} />
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 flex-wrap">
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input type="checkbox" checked={cronogramaForm.is_official} onChange={(e) => setCronogramaForm((f) => ({ ...f, is_official: e.target.checked }))} className="rounded" />
                       Cronograma Oficial
@@ -984,17 +1058,39 @@ export default function Admin() {
                       <input type="checkbox" checked={cronogramaForm.is_public} onChange={(e) => setCronogramaForm((f) => ({ ...f, is_public: e.target.checked }))} className="rounded" />
                       Público
                     </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={cronogramaForm.status === 'active'}
+                        onChange={(e) => setCronogramaForm((f) => ({ ...f, status: e.target.checked ? 'active' : 'draft' }))}
+                        className="rounded"
+                      />
+                      Publicado (visível para alunos)
+                    </label>
                   </div>
+
+                  <AdminCronogramaEditor
+                    key={editingCronogramaId || 'new'}
+                    disciplines={cronogramaDisciplines}
+                    onChange={setCronogramaDisciplines}
+                  />
+
                   <div className="flex gap-2">
                     <Button
                       type="submit"
-                      disabled={!cronogramaForm.title?.trim() || createCronogramaMutation.isPending}
+                      disabled={
+                        !cronogramaForm.title?.trim()
+                        || createCronogramaMutation.isPending
+                        || updateCronogramaMutation.isPending
+                      }
                       className="bg-[#2f456d] hover:bg-[#1a2d4a] text-white"
                       size="sm"
                     >
-                      {createCronogramaMutation.isPending ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Salvando...</> : 'Salvar'}
+                      {(createCronogramaMutation.isPending || updateCronogramaMutation.isPending)
+                        ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Salvando...</>
+                        : (editingCronogramaId ? 'Salvar alterações' : 'Criar cronograma')}
                     </Button>
-                    <Button type="button" variant="outline" size="sm" onClick={() => setShowCronogramaForm(false)}>Cancelar</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={resetCronogramaForm}>Cancelar</Button>
                   </div>
                 </form>
               </CardContent>
@@ -1017,22 +1113,51 @@ export default function Admin() {
                       <p className="font-semibold text-slate-800 dark:text-white">{c.title}</p>
                       {c.is_official && <Badge className="text-xs bg-[#f26836]/10 text-[#f26836] border-[#f26836]/20">Oficial</Badge>}
                       <Badge variant="outline" className="text-xs">{c.status}</Badge>
+                      {(c.disciplines_count || 0) === 0 && (
+                        <Badge className="text-xs bg-amber-100 text-amber-700 border-0">Sem disciplinas</Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap">
                       {c.contest && <span>{c.contest}</span>}
                       {c.exam_board && <span>{c.exam_board}</span>}
                       <span>{c.disciplines_count || 0} disciplinas</span>
+                      <span>{c.subjects_count || 0} assuntos</span>
                       <span>{c.students_count || 0} alunos</span>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { if (window.confirm('Excluir cronograma?')) deleteCronogramaMutation.mutate(c.id); }}
-                    className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {c.status !== 'active' && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={publishCronogramaMutation.isPending}
+                        onClick={() => publishCronogramaMutation.mutate(c.id)}
+                        className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 h-8 text-xs"
+                      >
+                        Publicar
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditCronograma(c)}
+                      className="text-slate-500 hover:text-[#2f456d] h-8"
+                      title="Editar disciplinas e dados"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { if (window.confirm('Excluir cronograma?')) deleteCronogramaMutation.mutate(c.id); }}
+                      className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 h-8"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

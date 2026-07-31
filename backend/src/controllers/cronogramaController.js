@@ -162,7 +162,11 @@ export const listCronograms = async (req, res) => {
     const where = {};
     // status omitido ou "all" → lista todos (admin); senão filtra
     if (status && status !== 'all') where.status = status;
-    if (official === 'true') where.is_official = true;
+    if (official === 'true') {
+      where.is_official = true;
+      // Galeria do aluno: só públicos
+      if (req.query.include_private !== 'true') where.is_public = true;
+    }
     if (official === 'false') where.is_official = false;
 
     const [items, total] = await Promise.all([
@@ -300,7 +304,11 @@ export const updateCronogram = async (req, res) => {
     const {
       title, slug, description, thumbnail_url, contest, exam_board, position,
       category, status, is_official, is_public, total_days, tags, display_order,
+      disciplines,
     } = req.body;
+
+    const existing = await prisma.cronogram.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) return res.status(404).json({ error: 'Cronograma não encontrado' });
 
     const data = {};
     if (title !== undefined) data.title = title;
@@ -318,11 +326,54 @@ export const updateCronogram = async (req, res) => {
     if (tags !== undefined) data.tags = tags;
     if (display_order !== undefined) data.display_order = display_order;
 
-    const cronogram = await prisma.cronogram.update({ where: { id }, data });
+    // Troca completa de disciplinas/assuntos quando enviados
+    if (Array.isArray(disciplines)) {
+      await prisma.cronogramDiscipline.deleteMany({ where: { cronogram_id: id } });
+      if (disciplines.length > 0) {
+        for (let i = 0; i < disciplines.length; i++) {
+          const d = disciplines[i];
+          if (!d?.name?.trim()) continue;
+          await prisma.cronogramDiscipline.create({
+            data: {
+              cronogram_id: id,
+              name: d.name.trim(),
+              display_order: d.display_order ?? i,
+              color: d.color || 'blue',
+              icon: d.icon || null,
+              weight: d.weight ?? 1,
+              difficulty: d.difficulty ?? 3,
+              required: d.required !== false,
+              suggested_hours: d.suggested_hours ?? null,
+              subjects: {
+                create: (d.subjects || [])
+                  .filter((s) => (typeof s === 'string' ? s.trim() : s?.name?.trim()))
+                  .map((s, j) => ({
+                    name: typeof s === 'string' ? s.trim() : s.name.trim(),
+                    description: typeof s === 'string' ? null : (s.description || null),
+                    display_order: typeof s === 'string' ? j : (s.display_order ?? j),
+                    weight: typeof s === 'string' ? 1 : (s.weight ?? 1),
+                    suggested_minutes: typeof s === 'string' ? 60 : (s.suggested_minutes ?? 60),
+                    required: typeof s === 'string' ? true : (s.required !== false),
+                  })),
+              },
+            },
+          });
+        }
+      }
+    }
+
+    if (Object.keys(data).length > 0) {
+      await prisma.cronogram.update({ where: { id }, data });
+    }
+
+    const cronogram = await prisma.cronogram.findUnique({
+      where: { id },
+      include: { disciplines: { include: { subjects: true }, orderBy: { display_order: 'asc' } } },
+    });
     res.json(cronogram);
   } catch (err) {
     console.error('updateCronogram error:', err);
-    res.status(500).json({ error: 'Erro ao atualizar cronograma' });
+    res.status(500).json({ error: 'Erro ao atualizar cronograma', detail: err.message });
   }
 };
 
