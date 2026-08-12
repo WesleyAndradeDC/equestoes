@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "npx prisma generate && node src/index.js",
+    "start": "node src/index.js",
     "build": "npx prisma generate",
-    "postinstall": "node -e \"if(process.env.DATABASE_URL){require('child_process').execSync('npx prisma generate',{stdio:'inherit',shell:true})}\"",
+    "postinstall": "npx prisma generate",
     "db:push": "npx prisma db push --accept-data-loss",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

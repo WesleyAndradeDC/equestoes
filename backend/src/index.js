@@ -75,7 +75,9 @@ app.use(
   cors({
     origin: (origin, callback) => {
       const allowed = isAllowedOrigin(origin);
-      console.log(`[CORS] origin="${origin ?? '(sem origin)'}" allowed=${allowed} FRONTEND_URL="${process.env.FRONTEND_URL ?? '(não definido)'}"`);
+      if (!allowed) {
+        console.warn(`[CORS] bloqueado origin="${origin ?? '(sem origin)'}" FRONTEND_URL="${process.env.FRONTEND_URL ?? '(não definido)'}"`);
+      }
       if (allowed) {
         callback(null, true);
       } else {
@@ -132,25 +134,34 @@ app.use('/api/webhook', (req, res, next) => {
 });
 
 // ─── RATE LIMITING ────────────────────────────────────────────────────────────
-// Rate limit global: 100 req/15min por IP
-// Webhooks do WooCommerce ficam ISENTOS para não bloquear eventos críticos.
+// SPA autentica + lista questões/cronogramas gera dezenas de req por sessão.
+// 100/15min por IP derruba escolas/escritórios (NAT) e parece "servidor fora".
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: Number(process.env.RATE_LIMIT_MAX) || 2000,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Muitas requisições. Tente novamente em alguns minutos.' },
-  skip: (req) => req.originalUrl.startsWith('/api/webhook'), // ← isenta webhooks
+  message: {
+    error: 'Muitas requisições. Aguarde alguns minutos e tente novamente.',
+  },
+  skip: (req) => {
+    if (req.method === 'OPTIONS') return true;
+    const path = req.originalUrl || req.url || '';
+    if (path === '/' || path.startsWith('/health')) return true;
+    if (path.startsWith('/api/webhook')) return true;
+    return false;
+  },
 });
 
-// Rate limit agressivo para autenticação: 10 tentativas/15min por IP
+// Rate limit agressivo para autenticação: 20 tentativas/15min por IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 20,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
-  skipSuccessfulRequests: true, // Não conta requisições bem-sucedidas
+  skipSuccessfulRequests: true,
+  skip: (req) => req.method === 'OPTIONS',
 });
 
 app.use(globalLimiter);

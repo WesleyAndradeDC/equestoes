@@ -57,16 +57,26 @@ class ApiClient {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(data?.error || `Erro na requisição: ${response.status}`);
+        if (response.status === 429) {
+          throw new Error(data?.error || 'Muitas requisições. Aguarde alguns minutos e tente novamente.');
+        }
+        if (response.status === 502 || response.status === 503 || response.status === 504) {
+          throw new Error('Servidor temporariamente indisponível. Aguarde alguns segundos e tente novamente.');
+        }
+        throw new Error(data?.error || data?.message || `Erro na requisição: ${response.status}`);
       }
 
       return data;
     } catch (error) {
-      // Erro de rede (Failed to fetch) — pode ser cold start do servidor
-      const isNetworkError = error instanceof TypeError && error.message === 'Failed to fetch';
+      // Erro de rede (Failed to fetch) — cold start / proxy / CORS sem header
+      const isNetworkError = error instanceof TypeError && (
+        error.message === 'Failed to fetch' ||
+        error.message.includes('NetworkError') ||
+        error.message.includes('Load failed')
+      );
 
       if (isNetworkError && currentAttempt < maxRetries) {
-        const delay = (currentAttempt + 1) * 3000; // 3s, 6s...
+        const delay = (currentAttempt + 1) * 2000;
         if (isDev) {
           console.warn(`[apiClient] Rede indisponível, tentando novamente em ${delay / 1000}s... (${currentAttempt + 1}/${maxRetries})`);
         }
@@ -75,7 +85,7 @@ class ApiClient {
       }
 
       if (isNetworkError) {
-        throw new Error('Não foi possível conectar ao servidor. Verifique sua internet ou aguarde alguns segundos e tente novamente.');
+        throw new Error('Servidor temporariamente indisponível. Verifique sua internet ou aguarde alguns segundos e tente novamente.');
       }
 
       if (isDev) {
