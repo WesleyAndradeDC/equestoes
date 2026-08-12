@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { Loader2, CalendarDays, Plus, Lock, Trash2 } from 'lucide-react';
+import { Loader2, CalendarDays, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import CronogramaWizard from '@/components/cronogramas/CronogramaWizard';
 import CronogramaDashboard from '@/components/cronogramas/CronogramaDashboard';
 import cronogramaService from '@/services/cronogramaService';
-import { useAuth } from '@/contexts/AuthContext';
-import { hasCronogramasAccess } from '@/config/cronogramasAccess';
 import { toast } from 'sonner';
 
 const STATUS_COLOR = {
@@ -93,18 +90,14 @@ function CronogramaCard({ uc, onSelect, onDelete, deleting }) {
 }
 
 export default function Cronogramas() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [selectedUc, setSelectedUc] = useState(null);
   const [showWizard, setShowWizard] = useState(false);
   const qc = useQueryClient();
-  const allowed = hasCronogramasAccess(user);
 
   const { data: userCronogramas = [], isLoading } = useQuery({
     queryKey: ['user-cronogramas'],
     queryFn: () => cronogramaService.listMy(),
     staleTime: 30_000,
-    enabled: allowed,
   });
 
   const deleteMutation = useMutation({
@@ -116,21 +109,6 @@ export default function Cronogramas() {
     },
     onError: (err) => toast.error(err?.message || 'Erro ao excluir'),
   });
-
-  if (user && !allowed) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-3 px-4">
-        <Lock className="w-12 h-12 text-slate-300 dark:text-slate-600" />
-        <h2 className="text-xl font-bold text-slate-700 dark:text-slate-200">Acesso restrito</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
-          O módulo Cronogramas está em beta e disponível apenas para usuários autorizados.
-        </p>
-        <Button variant="outline" onClick={() => navigate('/')} className="mt-2">
-          Voltar ao início
-        </Button>
-      </div>
-    );
-  }
 
   const handleWizardComplete = (newUc) => {
     qc.invalidateQueries({ queryKey: ['user-cronogramas'] });

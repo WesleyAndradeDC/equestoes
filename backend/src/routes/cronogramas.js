@@ -5,13 +5,12 @@ import {
   adoptOfficialCronogram, getDayTasks, updateTaskStatus, recalculate, updateSubjectProgress,
   getUserCronogramStats, getCalendar, getAvailableDisciplines,
 } from '../controllers/cronogramaController.js';
-import { authenticate, requireActiveSubscription, requireCronogramasBeta } from '../middlewares/auth.js';
+import { authenticate, requireActiveSubscription, requireAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-// Beta: só emails liberados em requireCronogramasBeta
-const guard = [authenticate, requireCronogramasBeta, requireActiveSubscription];
-const guardAuth = [authenticate, requireCronogramasBeta];
+const guard = [authenticate, requireActiveSubscription];
+const guardAdmin = [authenticate, requireAdmin];
 
 // ── Oficial / disciplinas ──────────────────────────────────────────────────────
 router.get('/official',          ...guard, listCronograms);
@@ -34,10 +33,10 @@ router.patch('/my/:id/subjects/:subjectId/progress', ...guard, updateSubjectProg
 router.post('/official/:cronogram_id/adopt', ...guard, adoptOfficialCronogram);
 
 // ── Admin: CRUD cronogramas oficiais ──────────────────────────────────────────
-router.get('/',        ...guardAuth, listCronograms);
-router.get('/:id',     ...guardAuth, getCronogram);
-router.post('/',       ...guardAuth, createCronogram);
-router.put('/:id',     ...guardAuth, updateCronogram);
-router.delete('/:id',  ...guardAuth, deleteCronogram);
+router.get('/',        ...guardAdmin, listCronograms);
+router.get('/:id',     ...guardAdmin, getCronogram);
+router.post('/',       ...guardAdmin, createCronogram);
+router.put('/:id',     ...guardAdmin, updateCronogram);
+router.delete('/:id',  ...guardAdmin, deleteCronogram);
 
 export default router;
